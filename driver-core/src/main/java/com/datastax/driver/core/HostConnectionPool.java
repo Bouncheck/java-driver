@@ -298,6 +298,9 @@ class HostConnectionPool implements Connection.Owner {
     connectionsPerShard = coreSize / shardsCount + (coreSize % shardsCount > 0 ? 1 : 0);
     maxConnectionsPerShard =
         maxConnections / shardsCount + (maxConnections % shardsCount > 0 ? 1 : 0);
+    System.out.printf(
+        "connectionsPerShard %d, maxConnectionPerShard %d, shardCount %d\n",
+        connectionsPerShard, maxConnectionsPerShard, shardsCount);
     int toCreate = shardsCount * connectionsPerShard;
 
     this.connections = new List[shardsCount];

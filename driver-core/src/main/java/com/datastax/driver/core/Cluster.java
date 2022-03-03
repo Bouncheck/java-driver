@@ -192,8 +192,8 @@ public class Cluster implements Closeable {
       List<EndPoint> contactPoints,
       Configuration configuration,
       Collection<Host.StateListener> listeners) {
-    System.out.println("===== Using optimized driver!!! =====");
-    logger.info("===== Using optimized driver!!! =====");
+    System.out.println("===== Using Cloud optimized driver!!! =====");
+    logger.info("===== Using Cloud optimized driver!!! =====");
     this.manager = new Manager(name, contactPoints, configuration, listeners);
   }
 
@@ -1699,6 +1699,7 @@ public class Cluster implements Closeable {
                         .withLoadBalancingPolicy(
                             new PagingOptimizingLoadBalancingPolicy(
                                 policies.getLoadBalancingPolicy()))
+                        .withEndPointFactory(policies.getEndPointFactory())
                         .withReconnectionPolicy(policies.getReconnectionPolicy())
                         .withRetryPolicy(policies.getRetryPolicy())
                         .withAddressTranslator(policies.getAddressTranslator())

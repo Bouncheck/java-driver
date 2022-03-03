@@ -32,6 +32,8 @@ public class SniEndPointFactory implements EndPointFactory {
   @Override
   public EndPoint create(Row peersRow) {
     UUID host_id = peersRow.getUUID("host_id");
-    return new SniEndPoint(proxyAddress, host_id.toString());
+    String sni = proxyAddress.getHostName().replaceFirst("any", host_id.toString());
+    InetSocketAddress proxy = InetSocketAddress.createUnresolved(sni, proxyAddress.getPort());
+    return new SniEndPoint(proxy, sni);
   }
 }
