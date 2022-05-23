@@ -139,14 +139,22 @@ jobs:
 
       - name: Setup environment
         run: |
+          free -mh
+          ps -ww -o pid,user,%mem,command ax
+          ps auxww
+          ls /tmp
           pip3 install https://github.com/scylladb/scylla-ccm/archive/master.zip
 
       - name: Run integration tests on Cassandra (${{ matrix.cassandra-version }})
-        run: mvn -B verify -Pshort -Dcassandra.version=${{ matrix.cassandra-version }} -Dfmt.skip=true -Dclirr.skip=true -Danimal.sniffer.skip=true
+        run: mvn -B verify -Pshort -Dcassandra.version=3.11.11 -Dfmt.skip=true -Dclirr.skip=true -Danimal.sniffer.skip=true
 
       - name: Copy test results
         if: success() || failure()
         run: |
+          free -mh
+          ps -ww -o pid,user,%mem,command ax
+          ps auxww
+          ls /tmp
           shopt -s globstar
           mkdir cassandra-${{ matrix.cassandra-version }}
           cp --parents ./**/target/*-reports/*.xml cassandra-${{ matrix.cassandra-version }}/
