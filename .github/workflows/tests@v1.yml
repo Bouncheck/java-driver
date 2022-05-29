@@ -2,7 +2,7 @@ name: Tests
 
 on:
   push:
-    branches: [ scylla-3.*x ]
+    branches: [ scylla-3.*x, report-dir ]
   pull_request:
     branches: [ scylla-3.*x ]
   workflow_dispatch:
@@ -164,7 +164,7 @@ jobs:
         if: success() || failure()
         with:
           name: test-results
-          path: "*/**/target/*-reports/*.xml"
+          path: "/home/runner/work/java-driver/java-driver/driver-core/target/surefire-reports/*"
 
       - name: Upload CCM logs
         uses: actions/upload-artifact@v2
