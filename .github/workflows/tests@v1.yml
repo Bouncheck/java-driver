@@ -146,7 +146,7 @@ jobs:
           pip3 install https://github.com/scylladb/scylla-ccm/archive/master.zip
 
       - name: Run integration tests on Cassandra (${{ matrix.cassandra-version }})
-        run: mvn -B verify -Pshort -Dcassandra.version=3.11.11 -Dfmt.skip=true -Dclirr.skip=true -Danimal.sniffer.skip=true
+        run: mvn -X -e -B verify -Pshort -Dcassandra.version=3.11.11 -Dfmt.skip=true -Dclirr.skip=true -Danimal.sniffer.skip=true
 
       - name: Copy test results
         if: success() || failure()
