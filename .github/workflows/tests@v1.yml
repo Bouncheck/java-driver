@@ -163,8 +163,8 @@ jobs:
         uses: actions/upload-artifact@v2
         if: success() || failure()
         with:
-          name: test-results
-          path: "/home/runner/work/java-driver/java-driver/driver-core/target/surefire-reports/*"
+          name: test-results-surefire
+          path: "/home/runner/work/java-driver/java-driver/driver-core/target/surefire-reports"
 
       - name: Upload CCM logs
         uses: actions/upload-artifact@v2
