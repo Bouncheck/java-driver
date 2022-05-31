@@ -2,7 +2,7 @@ name: Tests
 
 on:
   push:
-    branches: [ scylla-3.*x ]
+    branches: [ scylla-3.*x, old-testing-mem ]
   pull_request:
     branches: [ scylla-3.*x ]
 
