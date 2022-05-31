@@ -31,7 +31,6 @@ import com.google.common.collect.Maps;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Closer;
 import com.google.common.io.Files;
-
 import java.io.*;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -520,8 +519,7 @@ public class CCMBridge implements CCMAccess {
     try {
       Process process = Runtime.getRuntime().exec("free -mh");
       process.waitFor();
-      BufferedReader in =
-              new BufferedReader(new InputStreamReader(process.getInputStream()));
+      BufferedReader in = new BufferedReader(new InputStreamReader(process.getInputStream()));
       String inputLine;
       while ((inputLine = in.readLine()) != null) {
         System.out.println(inputLine);
@@ -530,14 +528,13 @@ public class CCMBridge implements CCMAccess {
 
       process = Runtime.getRuntime().exec("date +%s%N | cut -b1-13");
       process.waitFor();
-      in =
-              new BufferedReader(new InputStreamReader(process.getInputStream()));
+      in = new BufferedReader(new InputStreamReader(process.getInputStream()));
       while ((inputLine = in.readLine()) != null) {
         System.out.println(inputLine);
       }
       in.close();
 
-    } catch(Exception e){
+    } catch (Exception e) {
       System.out.println(e.getMessage() + "\n" + e.toString());
     }
     if (started) return;
