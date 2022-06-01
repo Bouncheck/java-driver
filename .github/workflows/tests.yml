@@ -43,7 +43,6 @@ jobs:
 
       - name: Setup environment (Integration test on Cassandra 3.11.11)
         run: |
-          sudo apt-get update
           sudo pip3 install https://github.com/scylladb/scylla-ccm/archive/master.zip
 
       - name: Run integration tests on Cassandra 3.11.11
