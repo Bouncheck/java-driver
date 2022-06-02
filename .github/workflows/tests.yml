@@ -2,7 +2,7 @@ name: Tests
 
 on:
   push:
-    branches: [ test-step-changes ]
+    branches: [ python-actions ]
   pull_request:
     branches: [ scylla-3.*x ]
 
