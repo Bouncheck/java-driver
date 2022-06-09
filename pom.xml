@@ -931,7 +931,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       </build>
     </profile>
     <profile>
-      <!-- Speeds up `mvn install` when testing something locally -->
+      <!-- Speeds up `mvn install` when testing something locally. -->
       <id>fast</id>
       <properties>
         <license.skip>true</license.skip>
