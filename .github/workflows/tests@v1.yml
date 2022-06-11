@@ -2,7 +2,7 @@ name: Tests
 
 on:
   push:
-    branches: [ scylla-3.*x ]
+    branches: [ scylla-3.*x, scylla-3.x-prepare-throttling-approach1 ]
   pull_request:
     branches: [ scylla-3.*x ]
   workflow_dispatch:
