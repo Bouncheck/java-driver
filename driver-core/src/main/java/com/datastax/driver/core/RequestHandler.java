@@ -383,7 +383,7 @@ class RequestHandler {
 
     // There are some rare edge cases where for example requests end up
     // in endless loop of being reprepared. If .retryCount exceeds this value
-    // we will fail loudly with an exception instead of repreparing. actions4
+    // we will fail loudly with an exception instead of repreparing. actions5
     private int retryCountThreshold = 1024;
 
     private volatile Connection.ResponseHandler connectionHandler;
