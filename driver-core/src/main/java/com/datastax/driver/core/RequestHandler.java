@@ -383,7 +383,7 @@ class RequestHandler {
 
     // There are some rare edge cases where for example requests end up
     // in endless loop of being reprepared. If .retryCount exceeds this value
-    // we will fail loudly with an exception instead of repreparing. actions6
+    // we will fail loudly with an exception instead of repreparing. actions1
     private int retryCountThreshold = 1024;
 
     private volatile Connection.ResponseHandler connectionHandler;
@@ -836,13 +836,14 @@ class RequestHandler {
                     toPrepare.getQueryString(),
                     toPrepare.getQueryKeyspace(),
                     connection.endPoint);
-                if(queryStateRef.get().retryCount > retryCountThreshold) {
+                if (queryStateRef.get().retryCount > retryCountThreshold) {
+                  connection.release();
                   throw new IllegalStateException(
-                          String.format(
-                                  "Query {} on {} ended up with abnormally high retry count ({}). Giving up on preparing.",
-                                  toPrepare.getQueryString(),
-                                  toPrepare.getQueryKeyspace(),
-                                  queryStateRef.get().retryCount));
+                      String.format(
+                          "Query {} on {} ended up with abnormally high retry count ({}). Giving up on preparing.",
+                          toPrepare.getQueryString(),
+                          toPrepare.getQueryKeyspace(),
+                          queryStateRef.get().retryCount));
                 }
                 write(connection, prepareAndRetry(toPrepare.getQueryString()));
                 // we're done for now, the prepareAndRetry callback will handle the rest
