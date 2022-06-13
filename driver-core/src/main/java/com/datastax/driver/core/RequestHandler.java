@@ -831,7 +831,7 @@ class RequestHandler {
                           toPrepare.getQueryString()));
                 }
 
-                // trigger actions 4
+                // trigger actions 5
                 if (retriesByUnprepared > SPECULATIVE_EXECUTION_MAX_REPREPARES) {
                   connection.release();
                   String msg =
