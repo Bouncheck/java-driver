@@ -856,6 +856,7 @@ class RequestHandler {
                     connection.endPoint);
 
                 retriesByUnprepared++;
+                logger.info("unprepared retries: " + retriesByUnprepared);
                 write(connection, prepareAndRetry(toPrepare.getQueryString()));
                 // we're done for now, the prepareAndRetry callback will handle the rest
                 return;
