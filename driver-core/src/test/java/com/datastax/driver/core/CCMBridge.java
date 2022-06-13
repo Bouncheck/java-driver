@@ -1139,7 +1139,7 @@ public class CCMBridge implements CCMAccess {
                 }
               });
 
-      cassandraConfiguration.put("prepared_statements_cache_size_mb", "1");
+      cassandraConfiguration.put("prepared_statements_cache_size_mb", "0");
       ccm.execute(buildCreateCommand(clusterName, versionConfigured, cassandraVersion, dseVersion));
       updateNodeConf(ccm);
       ccm.updateConfig(cassandraConfiguration);
