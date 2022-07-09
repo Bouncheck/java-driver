@@ -733,6 +733,7 @@ public final class CodecRegistry {
       }
     }
 
+    // random comment
     if ((cqlType == null || cqlType.getName() == SET) && value instanceof Set) {
       Set set = (Set) value;
       if (set.isEmpty()) {
