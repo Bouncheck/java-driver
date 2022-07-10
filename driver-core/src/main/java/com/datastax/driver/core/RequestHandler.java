@@ -396,10 +396,12 @@ class RequestHandler {
 
     void findNextHostAndQuery() {
       try {
+        System.out.println("findNextHostAndQuery");
         Host host;
         while (!isDone.get()
             && (host = queryPlan.next()) != null
             && !queryStateRef.get().isCancelled()) {
+          System.out.println("host == " + host.toString());
           if (query(host)) {
             if (hostMetricsEnabled()) {
               metrics().getRegistry().counter(MetricsUtil.hostMetricName("writes.", host)).inc();
@@ -411,6 +413,9 @@ class RequestHandler {
                 .counter(MetricsUtil.hostMetricName("write-errors.", host))
                 .inc();
           }
+        }
+        if (current == null) {
+          System.out.println("current host is null in requesthandler");
         }
         if (current != null) {
           if (triedHosts == null) triedHosts = new CopyOnWriteArrayList<Host>();

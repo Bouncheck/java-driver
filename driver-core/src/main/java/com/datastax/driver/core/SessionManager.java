@@ -146,6 +146,7 @@ class SessionManager extends AbstractSession {
       DefaultResultSetFuture future =
           new DefaultResultSetFuture(
               this, cluster.manager.protocolVersion(), makeRequestMessage(statement, null));
+      System.out.println("before execute");
       execute(future, statement);
       System.out.println("returning future");
       return future;
