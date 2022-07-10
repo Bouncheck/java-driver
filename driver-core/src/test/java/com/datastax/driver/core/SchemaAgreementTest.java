@@ -56,6 +56,14 @@ public class SchemaAgreementTest extends CCMTestsSupport {
       System.out.println(host.getListenAddress());
       System.out.println(host.getListenSocketAddress());
     }
+    System.out.println("######");
+    System.out.println(session().getCluster().getMetadata().getContactPoints());
+    for (Host host : session().getCluster().getMetadata().getContactPoints()) {
+      System.out.println(host.getHostId());
+      System.out.println(host.getListenAddress());
+      System.out.println(host.getListenSocketAddress());
+    }
+    System.out.println("######");
     ProtocolOptions protocolOptions = cluster().getConfiguration().getProtocolOptions();
     protocolOptions.maxSchemaAgreementWaitSeconds = 0;
     ResultSet rs = session().execute(String.format(CREATE_TABLE, COUNTER.getAndIncrement()));
