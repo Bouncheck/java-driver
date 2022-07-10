@@ -159,6 +159,7 @@ class RequestHandler {
   }
 
   void sendRequest() {
+    System.out.println("request handler send request 162");
     startNewExecution();
   }
 
@@ -170,8 +171,10 @@ class RequestHandler {
   }
 
   private void startNewExecution() {
+    System.out.println("start new execution");
     if (isDone.get()) return;
 
+    System.out.println("start new execution is not done(?)");
     Message.Request request = callback.request();
     int position = executionIndex.getAndIncrement();
 

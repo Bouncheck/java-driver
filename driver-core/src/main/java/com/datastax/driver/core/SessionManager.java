@@ -147,6 +147,7 @@ class SessionManager extends AbstractSession {
           new DefaultResultSetFuture(
               this, cluster.manager.protocolVersion(), makeRequestMessage(statement, null));
       execute(future, statement);
+      System.out.println("returning future");
       return future;
     } else {
       System.out.println("is NOT init");
@@ -709,6 +710,7 @@ class SessionManager extends AbstractSession {
    * and handle host failover.
    */
   void execute(final RequestHandler.Callback callback, final Statement statement) {
+    System.out.println("execute");
     if (this.isClosed()) {
       callback.onException(
           null, new IllegalStateException("Could not send request, session is closed"), 0, 0);
