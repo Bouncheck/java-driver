@@ -437,7 +437,7 @@ public class CCMBridge implements CCMAccess {
 
   @Override
   public InetSocketAddress jmxAddressOfNode(int n) {
-    return new InetSocketAddress("localhost", jmxPorts[n - 1]);
+    return new InetSocketAddress(ipOfNode(n), jmxPorts[n - 1]);
   }
 
   @Override
@@ -542,6 +542,8 @@ public class CCMBridge implements CCMAccess {
 
   @Override
   public synchronized void start() {
+    System.out.println("cluster name " + clusterName);
+    System.out.println("ipprefix " + ipPrefix);
     if (started) return;
     if (logger.isDebugEnabled())
       logger.debug("Starting: {} - free memory: {} MB", this, TestUtils.getFreeMemoryMB());
