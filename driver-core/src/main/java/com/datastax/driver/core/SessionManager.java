@@ -142,12 +142,14 @@ class SessionManager extends AbstractSession {
   @Override
   public ResultSetFuture executeAsync(final Statement statement) {
     if (isInit) {
+      System.out.println("is init");
       DefaultResultSetFuture future =
           new DefaultResultSetFuture(
               this, cluster.manager.protocolVersion(), makeRequestMessage(statement, null));
       execute(future, statement);
       return future;
     } else {
+      System.out.println("is NOT init");
       // If the session is not initialized, we can't call makeRequestMessage() synchronously,
       // because it
       // requires internal Cluster state that might not be initialized yet (like the protocol
