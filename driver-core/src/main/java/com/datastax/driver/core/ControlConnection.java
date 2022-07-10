@@ -103,9 +103,11 @@ class ControlConnection implements Connection.Owner {
     if (isShutdown) return;
 
     List<Host> hosts = new ArrayList<Host>(cluster.metadata.getContactPoints());
+    System.out.println("connect() contact points : " + hosts.toString());
     // shuffle so that multiple clients with the same contact points don't all pick the same control
     // host
     Collections.shuffle(hosts);
+    System.out.println("Control connection 110 setNewConnection");
     setNewConnection(reconnectInternal(hosts.iterator(), true));
   }
 
@@ -155,6 +157,7 @@ class ControlConnection implements Connection.Owner {
         if (isShutdown) throw new ConnectionException(null, "Control connection was shut down");
 
         try {
+          System.out.println("try reconnect 159");
           return reconnectInternal(queryPlan(), false);
         } catch (NoHostAvailableException e) {
           throw new ConnectionException(null, e.getMessage());
@@ -224,12 +227,15 @@ class ControlConnection implements Connection.Owner {
   private Connection reconnectInternal(Iterator<Host> iter, boolean isInitialConnection)
       throws UnsupportedProtocolVersionException {
 
+    System.out.println("reconnect internal");
+
     Map<EndPoint, Throwable> errors = null;
 
     Host host = null;
     try {
       while (iter.hasNext()) {
         host = iter.next();
+        System.out.println("host iter next == " + host.toString());
         if (!host.convictionPolicy.canReconnectNow()) continue;
         try {
           return tryConnect(host, isInitialConnection);
