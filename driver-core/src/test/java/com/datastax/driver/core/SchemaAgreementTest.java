@@ -50,6 +50,12 @@ public class SchemaAgreementTest extends CCMTestsSupport {
   @Test(groups = "short", priority = 1)
   public void should_unset_flag_on_failed_agreement() {
     // Setting to 0 results in no query being set, so agreement fails
+    System.out.println(cluster().getMetadata().getContactPoints());
+    for (Host host : cluster().getMetadata().getContactPoints()) {
+      System.out.println(host.getHostId());
+      System.out.println(host.getListenAddress());
+      System.out.println(host.getListenSocketAddress());
+    }
     ProtocolOptions protocolOptions = cluster().getConfiguration().getProtocolOptions();
     protocolOptions.maxSchemaAgreementWaitSeconds = 0;
     ResultSet rs = session().execute(String.format(CREATE_TABLE, COUNTER.getAndIncrement()));
