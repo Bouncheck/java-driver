@@ -128,11 +128,15 @@ class RequestHandler {
     this.scheduler = manager.cluster.manager.connectionFactory.timer;
 
     callback.register(this);
-
+    System.out.println("inside request handler constructor");
     // If host is explicitly set on statement, bypass load balancing policy.
     if (statement.getHost() != null) {
+      System.out.println("query plan host explicitly set on statement");
+      System.out.println(statement.getHost());
       this.queryPlan = new QueryPlan(Iterators.singletonIterator(statement.getHost()));
     } else if (statement.isLWT()) {
+      System.out.println("statement is LWT");
+
       this.queryPlan =
           new QueryPlan(
               getReplicas(
@@ -142,9 +146,15 @@ class RequestHandler {
                       .loadBalancingPolicy()
                       .newQueryPlan(manager.poolsState.keyspace, statement)));
     } else {
+      System.out.println("not LWT");
       this.queryPlan =
           new QueryPlan(
               manager.loadBalancingPolicy().newQueryPlan(manager.poolsState.keyspace, statement));
+    }
+    Iterator<Host> it = this.queryPlan.iterator;
+    System.out.println("printing all query plan iterator next hosts");
+    while(it.hasNext()){
+      System.out.println(it.next());
     }
 
     this.speculativeExecutionPlan =
