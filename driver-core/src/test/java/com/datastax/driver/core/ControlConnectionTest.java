@@ -68,7 +68,7 @@ public class ControlConnectionTest extends CCMTestsSupport {
   static final Logger logger = LoggerFactory.getLogger(ControlConnectionTest.class);
 
   @Test(groups = "short")
-  @CCMConfig(numberOfNodes = 2)
+  @CCMConfig(dirtiesContext = true, numberOfNodes = 2)
   public void should_prevent_simultaneous_reconnection_attempts() throws InterruptedException {
 
     // Custom load balancing policy that counts the number of calls to newQueryPlan().
@@ -104,9 +104,9 @@ public class ControlConnectionTest extends CCMTestsSupport {
     TimeUnit.SECONDS.sleep(1);
     assertThat(reconnectionAttempts.get()).isEqualTo(2);
 
-    TimeUnit.SECONDS.sleep(10);
-    ccm().start(1);
-    ccm().start(2);
+    // TimeUnit.SECONDS.sleep(10);
+    // ccm().start(1);
+    // ccm().start(2);
   }
 
   /**
