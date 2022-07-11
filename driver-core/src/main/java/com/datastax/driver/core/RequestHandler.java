@@ -153,7 +153,7 @@ class RequestHandler {
     }
     Iterator<Host> it = this.queryPlan.iterator;
     System.out.println("printing all query plan iterator next hosts");
-    while(it.hasNext()){
+    while (it.hasNext()) {
       System.out.println(it.next());
     }
 
