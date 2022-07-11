@@ -203,7 +203,7 @@ jobs:
           sudo sh -c "echo 2097152 >> /proc/sys/fs/aio-max-nr"
 
       - name: Run integration tests on Scylla (${{ matrix.scylla-version }})
-        run: mvn -B verify -Dtest=*chemaAgreemen* -Pshort -Dscylla.version=${{ matrix.scylla-version }} -Dfmt.skip=true -Dclirr.skip=true -Danimal.sniffer.skip=true
+        run: mvn -B verify -Pshort -Dscylla.version=${{ matrix.scylla-version }} -Dfmt.skip=true -Dclirr.skip=true -Danimal.sniffer.skip=true
 
       - name: Copy test results
         if: success() || failure()
