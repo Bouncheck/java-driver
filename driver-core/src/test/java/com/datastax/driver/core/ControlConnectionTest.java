@@ -103,6 +103,10 @@ public class ControlConnectionTest extends CCMTestsSupport {
     ccm().stop(2);
     TimeUnit.SECONDS.sleep(1);
     assertThat(reconnectionAttempts.get()).isEqualTo(2);
+
+    TimeUnit.SECONDS.sleep(10);
+    ccm().start(1);
+    ccm().start(2);
   }
 
   /**
