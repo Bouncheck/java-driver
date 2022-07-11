@@ -151,7 +151,10 @@ class RequestHandler {
           new QueryPlan(
               manager.loadBalancingPolicy().newQueryPlan(manager.poolsState.keyspace, statement));
     }
-    Iterator<Host> it = this.queryPlan.iterator;
+    QueryPlan x =
+        new QueryPlan(
+            manager.loadBalancingPolicy().newQueryPlan(manager.poolsState.keyspace, statement));
+    Iterator<Host> it = x.iterator;
     System.out.println("printing all query plan iterator next hosts");
     while (it.hasNext()) {
       System.out.println(it.next());
