@@ -437,7 +437,7 @@ public class CCMBridge implements CCMAccess {
 
   @Override
   public InetSocketAddress jmxAddressOfNode(int n) {
-    return new InetSocketAddress("localhost", jmxPorts[n - 1]);
+    return new InetSocketAddress(ipOfNode(n), jmxPorts[n - 1]);
   }
 
   @Override
