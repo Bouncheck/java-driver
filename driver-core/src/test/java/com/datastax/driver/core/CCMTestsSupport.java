@@ -962,9 +962,12 @@ public class CCMTestsSupport {
       ccmBuilder = ccmTestConfig.ccmBuilder(testInstance);
       CCMAccess ccm = CCMCache.get(ccmBuilder);
       assert ccm != null;
+      System.out.println("if dirties context (965) ==");
       if (ccmTestConfig.dirtiesContext()) {
+        System.out.println("##true");
         this.ccm = ccm;
       } else {
+        System.out.println("##false");
         this.ccm = new ReadOnlyCCMAccess(ccm);
       }
       try {
@@ -1023,10 +1026,13 @@ public class CCMTestsSupport {
 
   protected void closeTestContext() throws Exception {
     if (ccmTestConfig != null && ccmBuilder != null && ccm != null) {
+      System.out.println("dirties context  (1029) ==");
       if (ccmTestConfig.dirtiesContext()) {
+        System.out.println("###true");
         CCMCache.remove(ccmBuilder);
         ccm.close();
       } else {
+        System.out.println("###false");
         ((ReadOnlyCCMAccess) ccm).delegate.close();
       }
     }

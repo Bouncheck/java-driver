@@ -64,7 +64,7 @@ import org.testng.annotations.Test;
 @CreateCCM(PER_METHOD)
 @CCMConfig(
     dirtiesContext = {true},
-    createCluster = false)
+    createCluster = {false})
 public class ControlConnectionTest extends CCMTestsSupport {
 
   static final Logger logger = LoggerFactory.getLogger(ControlConnectionTest.class);
