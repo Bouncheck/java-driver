@@ -62,13 +62,15 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 @CreateCCM(PER_METHOD)
-@CCMConfig(dirtiesContext = true, createCluster = false)
+@CCMConfig(
+    dirtiesContext = {true},
+    createCluster = false)
 public class ControlConnectionTest extends CCMTestsSupport {
 
   static final Logger logger = LoggerFactory.getLogger(ControlConnectionTest.class);
 
   @Test(groups = "short")
-  @CCMConfig(dirtiesContext = true, numberOfNodes = 2)
+  // @CCMConfig(dirtiesContext = {true}, numberOfNodes = 2)
   public void should_prevent_simultaneous_reconnection_attempts() throws InterruptedException {
 
     // Custom load balancing policy that counts the number of calls to newQueryPlan().
