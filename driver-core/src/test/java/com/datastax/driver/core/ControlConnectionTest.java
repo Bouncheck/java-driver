@@ -151,7 +151,7 @@ public class ControlConnectionTest extends CCMTestsSupport {
         cluster.manager.controlConnection.connectedHost().getEndPoint().resolve();
     assertThat(controlHost).isEqualTo(firstHost);
 
-    // Decommission the node.
+    // Decommission the node
     ccm().decommission(1);
 
     // Ensure that the new control connection is not null and it's host is not equal to the
