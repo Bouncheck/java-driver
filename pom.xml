@@ -456,7 +456,7 @@
                         Avoids warnings when cross-compiling to older source levels, see
                         https://blogs.oracle.com/darcy/entry/bootclasspath_older_source
                         -->
-                        <compilerArgument>-Xlint:-options</compilerArgument>
+                        <compilerArgument>-Xlint:unchecked</compilerArgument>
                         <!-- this actually means: use incremental compilation -->
                         <useIncrementalCompilation>false</useIncrementalCompilation>
                     </configuration>
