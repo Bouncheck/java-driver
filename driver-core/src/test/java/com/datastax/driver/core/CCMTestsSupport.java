@@ -484,6 +484,14 @@ public class CCMTestsSupport {
       return false;
     }
 
+    @SuppressWarnings("SimplifiableIfStatement")
+    private boolean startSniProxy() {
+      for (CCMConfig ann : annotations) {
+        if (ann != null && ann.startSniProxy().length > 0) return ann.startSniProxy()[0];
+      }
+      return false;
+    }
+
     private CCMBridge.Builder ccmBuilder(Object testInstance) throws Exception {
       if (ccmBuilder == null) {
         ccmBuilder = ccmProvider(testInstance);
@@ -501,6 +509,7 @@ public class CCMTestsSupport {
         if (dse != null) ccmBuilder.withDSE(dse);
         if (ssl()) ccmBuilder.withSSL();
         if (auth()) ccmBuilder.withAuth();
+        if (startSniProxy()) ccmBuilder.withSniProxy();
         for (Map.Entry<String, Object> entry : config().entrySet()) {
           ccmBuilder.withCassandraConfiguration(entry.getKey(), entry.getValue());
         }

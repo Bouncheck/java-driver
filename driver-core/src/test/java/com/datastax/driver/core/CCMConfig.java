@@ -210,6 +210,9 @@ public @interface CCMConfig {
    */
   boolean[] createKeyspace() default {};
 
+  /* nocheckin document */
+  boolean[] startSniProxy() default {};
+
   /**
    * Returns {@code true} if the test class or the test method alters the CCM cluster, e.g. by
    * adding or removing nodes, in which case, it should not be reused after the test is finished.

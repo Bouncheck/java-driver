@@ -346,6 +346,8 @@ public class CCMBridge implements CCMAccess {
 
   private final String jvmArgs;
 
+  private final boolean startSniProxy;
+
   private boolean keepLogs = false;
 
   private boolean started = false;
@@ -366,6 +368,7 @@ public class CCMBridge implements CCMAccess {
       int binaryPort,
       int[] jmxPorts,
       String jvmArgs,
+      boolean startSniProxy,
       int[] nodes) {
 
     this.clusterName = clusterName;
@@ -377,6 +380,7 @@ public class CCMBridge implements CCMAccess {
     this.binaryPort = binaryPort;
     this.isDSE = dseVersion != null;
     this.jvmArgs = jvmArgs;
+    this.startSniProxy = startSniProxy;
     this.nodes = nodes;
     this.ccmDir = Files.createTempDir();
     this.jmxPorts = jmxPorts;
@@ -537,6 +541,9 @@ public class CCMBridge implements CCMAccess {
       String cmd = CCM_COMMAND + " start " + jvmArgs + getStartWaitArguments();
       if (isWindows() && this.cassandraVersion.compareTo(VersionNumber.parse("2.2.4")) >= 0) {
         cmd += " --quiet-windows";
+      }
+      if (startSniProxy) {
+        cmd += " --sni-proxy";
       }
       execute(cmd);
 
@@ -916,6 +923,7 @@ public class CCMBridge implements CCMAccess {
     private int[] jmxPorts = {};
     private boolean start = true;
     private boolean dse = isDse();
+    private boolean startSniProxy = false;
     private VersionNumber version = null;
     private final Set<String> createOptions = new LinkedHashSet<String>();
     private final Set<String> jvmArgs = new LinkedHashSet<String>();
@@ -946,6 +954,11 @@ public class CCMBridge implements CCMAccess {
 
     public Builder withoutNodes() {
       return withNodes();
+    }
+
+    public Builder withSniProxy() {
+      this.startSniProxy = true;
+      return this;
     }
 
     /** Enables SSL encryption. */
@@ -1128,6 +1141,7 @@ public class CCMBridge implements CCMAccess {
               binaryPort,
               generatedJmxPorts,
               joinJvmArgs(),
+              startSniProxy,
               nodes);
 
       Runtime.getRuntime()
@@ -1334,6 +1348,7 @@ public class CCMBridge implements CCMAccess {
         return false;
       if (!createOptions.equals(builder.createOptions)) return false;
       if (!jvmArgs.equals(builder.jvmArgs)) return false;
+      if (startSniProxy != builder.startSniProxy) return false;
       if (!cassandraConfiguration.equals(builder.cassandraConfiguration)) return false;
       if (!dseConfiguration.equals(builder.dseConfiguration)) return false;
       return workloads.equals(builder.workloads);
@@ -1348,6 +1363,7 @@ public class CCMBridge implements CCMAccess {
       result = 31 * result + (version != null ? version.hashCode() : 0);
       result = 31 * result + createOptions.hashCode();
       result = 31 * result + jvmArgs.hashCode();
+      result = 31 * result + (startSniProxy ? 1 : 0);
       result = 31 * result + cassandraConfiguration.hashCode();
       result = 31 * result + dseConfiguration.hashCode();
       result = 31 * result + workloads.hashCode();
