@@ -62,4 +62,7 @@ public class Datacenter {
     return certificateAuthorityData;
   }
 
+  public String getServer() {
+    return server;
+  }
 }

@@ -14,6 +14,9 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.RSAPrivateCrtKeySpec;
+import java.security.spec.RSAPrivateKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.Map;
 
 public class ConnectionConfig {
@@ -50,7 +53,11 @@ public class ConnectionConfig {
       connectionConfig.validate();
       return connectionConfig;
     } catch (IllegalArgumentException e) {
-      throw new IllegalArgumentException("Configuration yaml located at " + yamlFile.getAbsolutePath() + " has incorrect format. See cause's message and stacktrace. ", e);
+      throw new IllegalArgumentException(
+          "Configuration yaml located at "
+              + yamlFile.getAbsolutePath()
+              + " has incorrect format. See cause's message and stacktrace. ",
+          e);
     } catch (JsonMappingException e) {
       throw e;
     } catch (JsonParseException e) {
@@ -58,7 +65,6 @@ public class ConnectionConfig {
     } catch (IOException e) {
       throw e;
     }
-
   }
 
   public void validate() {
@@ -157,13 +163,19 @@ public class ConnectionConfig {
       Certificate[] certArr = new Certificate[1];
       certArr[0] = cert;
 
-      keyString =
-          keyString
-              .replace("-----BEGIN PRIVATE KEY-----", "")
-              .replace("-----END PRIVATE KEY-----", "")
-              .replaceAll("\\s+", "");
-      byte[] arr = BaseEncoding.base64().decode(keyString);
+      System.out.println("************************");
+      System.out.println(keyString);
+      System.out.println("************************");
 
+      // Strip "----- BEGIN PRIVATE KEY -----" and similar:
+      keyString = keyString.replaceAll("-----.*-----", "").replaceAll("\\s+", "");
+
+      System.out.println("************************");
+      System.out.println(keyString);
+      System.out.println("************************");
+
+      byte[] arr = BaseEncoding.base64().decode(keyString);
+      
       PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(arr);
       KeyFactory kf = KeyFactory.getInstance("RSA");
       PrivateKey privateKey = kf.generatePrivate(keySpec);
@@ -171,5 +183,33 @@ public class ConnectionConfig {
     }
 
     return new ConfigurationBundle(identity, trustStore);
+  }
+
+  public String getKind() {
+    return kind;
+  }
+
+  public String getApiVersion() {
+    return apiVersion;
+  }
+
+  public Map<String, Datacenter> getDatacenters() {
+    return datacenters;
+  }
+
+  public Map<String, AuthInfo> getAuthInfos() {
+    return authInfos;
+  }
+
+  public Map<String, Context> getContexts() {
+    return contexts;
+  }
+
+  public String getCurrentContext() {
+    return currentContext;
+  }
+
+  public Parameters getParameters() {
+    return parameters;
   }
 }

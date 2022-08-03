@@ -1451,6 +1451,19 @@ public class Cluster implements Closeable {
       return addCloudConfigToBuilder(cloudConfig);
     }
 
+    public Builder withTemporary(InetSocketAddress sniProxyAddress) {
+      CloudConfig cloudConfig;
+      try {
+        cloudConfig = new CloudConfigFactory().createCloudConfigTemporary(sniProxyAddress);
+      } catch (IOException e) {
+        throw new IllegalStateException("Cannot construct cloud config", e);
+      } catch (GeneralSecurityException e) {
+        throw new IllegalStateException("Cannot construct cloud config", e);
+      }
+
+      return addCloudConfigToBuilder(cloudConfig);
+    }
+
     /**
      * Configures this Builder for Cloud deployments by retrieving connection information from the
      * provided {@link InputStream}.

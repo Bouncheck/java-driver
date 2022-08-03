@@ -1,10 +1,5 @@
 package com.datastax.driver.core;
 
-import com.datastax.driver.core.Cluster;
-import com.datastax.driver.core.Host;
-import com.datastax.driver.core.Session;
-import com.datastax.driver.core.SessionManager;
-
 import java.io.File;
 import java.util.Collection;
 

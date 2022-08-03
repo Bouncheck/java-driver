@@ -9,15 +9,15 @@ import java.security.cert.CertificateException;
 import java.security.spec.InvalidKeySpecException;
 import org.junit.Test;
 
-
-
 // WIP
 public class CloudConfigYamlParsingTest {
 
   private static String CONFIG_PATH = "/scylla_cloud/testConf.yaml";
 
   @Test
-  public void read_simple_config_and_create_bundle() throws CertificateException, KeyStoreException, IOException, NoSuchAlgorithmException, InvalidKeySpecException {
+  public void read_simple_config_and_create_bundle()
+      throws CertificateException, KeyStoreException, IOException, NoSuchAlgorithmException,
+          InvalidKeySpecException {
     CONFIG_PATH = "/scylla_cloud/testConf.yaml";
     URL url = getClass().getResource(CONFIG_PATH);
     File file = new File(url.getPath());
@@ -39,5 +39,4 @@ public class CloudConfigYamlParsingTest {
     ConnectionConfig connectionConfig = ConnectionConfig.fromFile(file);
     return;
   }
-
 }

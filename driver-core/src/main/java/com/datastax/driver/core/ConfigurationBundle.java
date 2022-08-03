@@ -15,18 +15,21 @@ public class ConfigurationBundle {
     this.trustStore = trustStore;
   }
 
-  private void writeKeystore(String path, KeyStore ks, char[] password) throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
+  private void writeKeystore(String path, KeyStore ks, char[] password)
+      throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
     File file = new File(path);
     OutputStream os = new FileOutputStream(file);
     ks.store(os, password);
     os.close();
   }
 
-  public void writeIdentity(String path, char[] password) throws CertificateException, IOException, KeyStoreException, NoSuchAlgorithmException {
+  public void writeIdentity(String path, char[] password)
+      throws CertificateException, IOException, KeyStoreException, NoSuchAlgorithmException {
     writeKeystore(path, identity, password);
   }
 
-  public void writeTrustStore(String path, char[] password) throws CertificateException, IOException, KeyStoreException, NoSuchAlgorithmException {
+  public void writeTrustStore(String path, char[] password)
+      throws CertificateException, IOException, KeyStoreException, NoSuchAlgorithmException {
     writeKeystore(path, trustStore, password);
   }
 }

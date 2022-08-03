@@ -27,6 +27,7 @@ import com.google.common.net.HostAndPort;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -161,9 +162,9 @@ class CloudConfigFactory {
   }
 
   protected SSLContext createSslContext(
-      ByteArrayInputStream keyStoreInputStream,
+      InputStream keyStoreInputStream,
       char[] keyStorePassword,
-      ByteArrayInputStream trustStoreInputStream,
+      InputStream trustStoreInputStream,
       char[] trustStorePassword)
       throws IOException, GeneralSecurityException {
     KeyManagerFactory kmf = createKeyManagerFactory(keyStoreInputStream, keyStorePassword);
@@ -258,5 +259,23 @@ class CloudConfigFactory {
     } catch (Exception e) {
       throw Throwables.propagate(e);
     }
+  }
+
+  public CloudConfig createCloudConfigTemporary(InetSocketAddress sniProxyAddress)
+      throws IOException, GeneralSecurityException {
+    char[] keyStorePassword = "dupadupa".toCharArray();
+    char[] trustStorePassword = "dupadupa".toCharArray();
+    InputStream keyStoreInputStream = new FileInputStream("/tmp/identity.jks");
+    InputStream trustStoreInputStream = new FileInputStream("/tmp/trust.jks");
+    SSLContext sslContext =
+        createSslContext(
+            keyStoreInputStream, keyStorePassword, trustStoreInputStream, trustStorePassword);
+    List<EndPoint> endPoints = new ArrayList<EndPoint>();
+    endPoints.add(new SniEndPoint(sniProxyAddress, sniProxyAddress.getHostName()));
+    String localDatacenter = "eu-west-1";
+    SSLOptions sslOptions = getSSLOptions(sslContext);
+    String pass = "cassandra";
+    AuthProvider authProvider = new PlainTextAuthProvider(pass, pass);
+    return new CloudConfig(sniProxyAddress, endPoints, localDatacenter, sslOptions, authProvider);
   }
 }

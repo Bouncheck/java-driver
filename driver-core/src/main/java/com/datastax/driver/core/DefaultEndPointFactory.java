@@ -60,8 +60,12 @@ public class DefaultEndPointFactory implements EndPointFactory {
           cluster.manager.translateAddress(new InetSocketAddress(nativeAddress, nativePort));
       return new TranslatedAddressEndPoint(translateAddress);
     } else {
-      InetAddress broadcastAddress = peersRow.getColumnDefinitions().contains("peer") ? peersRow.getInet("peer") : null;
-      InetAddress rpcAddress = peersRow.getColumnDefinitions().contains("rpc_address") ? peersRow.getInet("rpc_address") : null;
+      InetAddress broadcastAddress =
+          peersRow.getColumnDefinitions().contains("peer") ? peersRow.getInet("peer") : null;
+      InetAddress rpcAddress =
+          peersRow.getColumnDefinitions().contains("rpc_address")
+              ? peersRow.getInet("rpc_address")
+              : null;
       if (broadcastAddress == null || rpcAddress == null) {
         return null;
       } else if (rpcAddress.equals(BIND_ALL_ADDRESS)) {

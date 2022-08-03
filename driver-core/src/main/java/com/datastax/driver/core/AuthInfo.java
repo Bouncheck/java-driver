@@ -21,7 +21,8 @@ public class AuthInfo {
       @JsonProperty(value = "clientKeyPath") String clientKeyPath,
       @JsonProperty(value = "username") String username,
       @JsonProperty(value = "password") String password,
-      @JsonProperty(value = "insecureSkipTlsVerify", defaultValue = "false") boolean insecureSkipTlsVerify) {
+      @JsonProperty(value = "insecureSkipTlsVerify", defaultValue = "false")
+          boolean insecureSkipTlsVerify) {
     this.clientCertificateData = clientCertificateData;
     this.clientCertificatePath = clientCertificatePath;
     this.clientKeyData = clientKeyData;
