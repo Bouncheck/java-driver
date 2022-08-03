@@ -11,6 +11,7 @@ public class AuthInfo {
   private final String clientKeyPath;
   private final String username;
   private final String password;
+  private final boolean insecureSkipTlsVerify;
 
   @JsonCreator
   public AuthInfo(
@@ -19,13 +20,15 @@ public class AuthInfo {
       @JsonProperty(value = "clientKeyData") byte[] clientKeyData,
       @JsonProperty(value = "clientKeyPath") String clientKeyPath,
       @JsonProperty(value = "username") String username,
-      @JsonProperty(value = "password") String password) {
+      @JsonProperty(value = "password") String password,
+      @JsonProperty(value = "insecureSkipTlsVerify", defaultValue = "false") boolean insecureSkipTlsVerify) {
     this.clientCertificateData = clientCertificateData;
     this.clientCertificatePath = clientCertificatePath;
     this.clientKeyData = clientKeyData;
     this.clientKeyPath = clientKeyPath;
     this.username = username;
     this.password = password;
+    this.insecureSkipTlsVerify = insecureSkipTlsVerify;
   }
 
   public void validate() {
