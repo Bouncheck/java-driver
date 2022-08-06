@@ -177,6 +177,8 @@ class CloudConfigFactory {
   protected KeyManagerFactory createKeyManagerFactory(
       InputStream keyStoreInputStream, char[] keyStorePassword)
       throws IOException, GeneralSecurityException {
+    System.out.println("passwordd #####\n#########\n");
+    System.out.println(keyStorePassword);
     KeyStore ks = KeyStore.getInstance("JKS");
     ks.load(keyStoreInputStream, keyStorePassword);
     KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
@@ -263,8 +265,8 @@ class CloudConfigFactory {
 
   public CloudConfig createCloudConfigTemporary(InetSocketAddress sniProxyAddress)
       throws IOException, GeneralSecurityException {
-    char[] keyStorePassword = "dupadupa".toCharArray();
-    char[] trustStorePassword = "dupadupa".toCharArray();
+    char[] keyStorePassword = "cassandra".toCharArray();
+    char[] trustStorePassword = "cassandra".toCharArray();
     InputStream keyStoreInputStream = new FileInputStream("/tmp/identity.jks");
     InputStream trustStoreInputStream = new FileInputStream("/tmp/trust.jks");
     SSLContext sslContext =

@@ -101,8 +101,8 @@ public class ConnectionConfig {
     this.validate();
     KeyStore identity = KeyStore.getInstance(KeyStore.getDefaultType());
     KeyStore trustStore = KeyStore.getInstance(KeyStore.getDefaultType());
-    identity.load(null, "example123".toCharArray());
-    trustStore.load(null, "example123".toCharArray());
+    identity.load(null, "cassandra".toCharArray());
+    trustStore.load(null, "cassandra".toCharArray());
 
     for (Map.Entry<String, Datacenter> x : datacenters.entrySet()) {
       Datacenter datacenter = x.getValue();
@@ -119,7 +119,8 @@ public class ConnectionConfig {
       }
       CertificateFactory cf = CertificateFactory.getInstance("X.509");
       Certificate cert = cf.generateCertificate(certificateDataStream);
-      // identity.setCertificateEntry(x.getKey(), cert);
+      //line below was commented before
+      identity.setCertificateEntry(x.getKey(), cert);
       trustStore.setCertificateEntry(x.getKey(), cert);
     }
 
@@ -175,11 +176,11 @@ public class ConnectionConfig {
       System.out.println("************************");
 
       byte[] arr = BaseEncoding.base64().decode(keyString);
-      
+
       PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(arr);
       KeyFactory kf = KeyFactory.getInstance("RSA");
       PrivateKey privateKey = kf.generatePrivate(keySpec);
-      identity.setKeyEntry(x.getKey(), privateKey, "example123".toCharArray(), certArr);
+      identity.setKeyEntry(x.getKey(), privateKey, "cassandra".toCharArray(), certArr);
     }
 
     return new ConfigurationBundle(identity, trustStore);

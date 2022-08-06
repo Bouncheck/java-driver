@@ -28,8 +28,8 @@ public class WorkInProgressNameDontGitPushIntegrationTest {
     File yamlFile = new File(clusterFile, "config_data.yaml");
     ConnectionConfig config = ConnectionConfig.fromFile(yamlFile);
     ConfigurationBundle cb = config.createBundle();
-    cb.writeIdentity("/tmp/identity.jks", "dupadupa".toCharArray());
-    cb.writeTrustStore("/tmp/trust.jks", "dupadupa".toCharArray());
+    cb.writeIdentity("/tmp/identity.jks", "cassandra".toCharArray());
+    cb.writeTrustStore("/tmp/trust.jks", "cassandra".toCharArray());
 
     System.out.println(config.toString());
 
