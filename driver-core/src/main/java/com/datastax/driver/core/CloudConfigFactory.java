@@ -273,7 +273,8 @@ class CloudConfigFactory {
         createSslContext(
             keyStoreInputStream, keyStorePassword, trustStoreInputStream, trustStorePassword);
     List<EndPoint> endPoints = new ArrayList<EndPoint>();
-    endPoints.add(new SniEndPoint(sniProxyAddress, sniProxyAddress.getHostName()));
+    //endPoints.add(new SniEndPoint(sniProxyAddress, sniProxyAddress.getHostName()));
+    endPoints.add(new SniEndPoint(sniProxyAddress, "any.cluster-id.scylla.com"));
     String localDatacenter = "eu-west-1";
     SSLOptions sslOptions = getSSLOptions(sslContext);
     String pass = "cassandra";

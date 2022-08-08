@@ -1547,7 +1547,7 @@ public class Cluster implements Closeable {
 
     private Builder addCloudConfigToBuilder(CloudConfig cloudConfig) {
       Builder builder =
-          withEndPointFactory(new SniEndPointFactory(cloudConfig.getProxyAddress()))
+          withEndPointFactory(new SniEndPointFactory(cloudConfig.getProxyAddress(), "cluster-id.scylla.com" ))
               .withSSL(cloudConfig.getSslOptions());
 
       if (cloudConfig.getAuthProvider() != null) {

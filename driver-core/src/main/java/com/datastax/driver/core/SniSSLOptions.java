@@ -92,7 +92,9 @@ public class SniSSLOptions extends JdkSSLOptions implements ExtendedRemoteEndpoi
     // To avoid that, we create a unique "fake" port for every node. We still get session reuse for
     // a given node, but not across nodes. This is safe because the advisory port is only used for
     // session caching.
-    SSLEngine engine = context.createSSLEngine(address.getHostName(), getFakePort(sniServerName));
+
+    //SSLEngine engine = context.createSSLEngine(address.getHostName(), getFakePort(sniServerName));
+    SSLEngine engine = context.createSSLEngine(sniServerName, getFakePort(sniServerName));
     engine.setUseClientMode(true);
     SSLParameters parameters = engine.getSSLParameters();
     parameters.setServerNames(ImmutableList.<SNIServerName>of(new SNIHostName(sniServerName)));

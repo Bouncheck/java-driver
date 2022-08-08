@@ -35,8 +35,8 @@ public class WorkInProgressNameDontGitPushIntegrationTest {
 
     String[] split = config.getDatacenters().get("eu-west-1").getServer().split(":");
 
-    InetSocketAddress sniProxyAddress =
-        InetSocketAddress.createUnresolved(split[0], Integer.parseInt(split[1]));
+    InetSocketAddress sniProxyAddress = InetSocketAddress.createUnresolved("127.0.1.1", Integer.parseInt(split[1]));
+        //InetSocketAddress.createUnresolved(split[0], Integer.parseInt(split[1]));
 
     Cluster c = Cluster.builder().withTemporary(sniProxyAddress).build();
     Session s = c.connect();
@@ -48,6 +48,8 @@ public class WorkInProgressNameDontGitPushIntegrationTest {
     }
     ((SessionManager) s).cluster.manager.controlConnection.triggerReconnect();
 
+    System.out.println(s.execute("SELECT broadcast_address, host_id FROM system.local").all());
+    
     s.close();
     c.close();
   }
