@@ -94,16 +94,16 @@ jobs:
     steps:
       - name: Checkout source
         uses: actions/checkout@v2
+                  
+      - name: Setup Python 2 (setup it)
+        uses: actions/setup-python@v2
+        with:
+          python-version: '2.x'
 
       - name: Setup Python 3
         uses: actions/setup-python@v2
         with:
           python-version: '3.x'
-          
-      - name: Setup Python 2 (setup it)
-        uses: actions/setup-python@v2
-        with:
-          python-version: '2.x'
 
       - name: Fetch Scylla and Cassandra versions
         id: fetch-versions
@@ -136,15 +136,15 @@ jobs:
           java-version: '8'
           distribution: 'adopt'
 
-      - name: Setup Python 3
-        uses: actions/setup-python@v2
-        with:
-          python-version: '3.x'
-
       - name: Setup Python 2 (cas it)
         uses: actions/setup-python@v2
         with:
           python-version: '2.x'
+          
+      - name: Setup Python 3
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
 
       - name: Setup environment
         run: |
@@ -175,6 +175,7 @@ jobs:
       - name: Check python versions
         run: |
           python --version
+          echo "aaa"
           python2 --version
           python3 --version
 
@@ -199,15 +200,15 @@ jobs:
           java-version: '8'
           distribution: 'adopt'
 
-      - name: Setup Python 3
-        uses: actions/setup-python@v2
-        with:
-          python-version: '3.x'
-      
       - name: Setup Python 2 (scylla test)
         uses: actions/setup-python@v2
         with:
           python-version: '2.x'
+
+      - name: Setup Python 3
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
 
       - name: Setup environment
         run: |
@@ -239,5 +240,6 @@ jobs:
       - name: Check python versions
         run: |
           python --version
+          echo "aaa"
           python2 --version
           python3 --version
