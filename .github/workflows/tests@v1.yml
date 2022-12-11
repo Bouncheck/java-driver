@@ -99,6 +99,11 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: '3.x'
+          
+      - name: Setup Python 2 (setup it)
+        uses: actions/setup-python@v2
+        with:
+          python-version: '2.x'
 
       - name: Fetch Scylla and Cassandra versions
         id: fetch-versions
@@ -135,6 +140,11 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: '3.x'
+
+      - name: Setup Python 2 (cas it)
+        uses: actions/setup-python@v2
+        with:
+          python-version: '2.x'
 
       - name: Setup environment
         run: |
@@ -187,6 +197,11 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: '3.x'
+      
+      - name: Setup Python 2 (scylla test)
+        uses: actions/setup-python@v2
+        with:
+          python-version: '2.x'
 
       - name: Setup environment
         run: |
