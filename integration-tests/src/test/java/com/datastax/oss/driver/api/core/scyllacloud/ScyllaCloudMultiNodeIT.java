@@ -34,7 +34,7 @@ import org.mockito.Mockito;
 public class ScyllaCloudMultiNodeIT {
 
   private static final int NUMBER_OF_NODES = 3;
-  private static final int SNI_PORT = 0; // Let CCM pick
+  private static final int SNI_PORT = 0; // Let CCM pick.
 
   @ClassRule
   public static CustomCcmRule CCM_RULE =
