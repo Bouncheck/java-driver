@@ -172,6 +172,12 @@ jobs:
           name: ccm-logs-cassandra-${{ matrix.cassandra-version }}
           path: /tmp/ccm*/ccm*/node*/logs/*
 
+      - name: Check python versions
+        run: |
+          python --version
+          python2 --version
+          python3 --version
+
   scylla-integration-tests:
     name: Scylla ITs
     runs-on: ubuntu-latest
@@ -229,3 +235,9 @@ jobs:
         with:
           name: ccm-logs-scylla-${{ matrix.scylla-version }}
           path: /tmp/ccm*/ccm*/node*/logs/*
+
+      - name: Check python versions
+        run: |
+          python --version
+          python2 --version
+          python3 --version
