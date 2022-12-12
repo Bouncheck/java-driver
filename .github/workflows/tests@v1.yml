@@ -94,6 +94,11 @@ jobs:
     steps:
       - name: Checkout source
         uses: actions/checkout@v2
+                  
+      - name: Setup Python 2 (setup it)
+        uses: actions/setup-python@v2
+        with:
+          python-version: '2.x'
 
       - name: Setup Python 3
         uses: actions/setup-python@v2
@@ -131,6 +136,11 @@ jobs:
           java-version: '8'
           distribution: 'adopt'
 
+      - name: Setup Python 2 (cas it)
+        uses: actions/setup-python@v2
+        with:
+          python-version: '2.x'
+          
       - name: Setup Python 3
         uses: actions/setup-python@v2
         with:
@@ -162,6 +172,13 @@ jobs:
           name: ccm-logs-cassandra-${{ matrix.cassandra-version }}
           path: /tmp/ccm*/ccm*/node*/logs/*
 
+      - name: Check python versions
+        run: |
+          python --version
+          echo "aaa"
+          python2 --version
+          python3 --version
+
   scylla-integration-tests:
     name: Scylla ITs
     runs-on: ubuntu-latest
@@ -182,6 +199,11 @@ jobs:
         with:
           java-version: '8'
           distribution: 'adopt'
+
+      - name: Setup Python 2 (scylla test)
+        uses: actions/setup-python@v2
+        with:
+          python-version: '2.x'
 
       - name: Setup Python 3
         uses: actions/setup-python@v2
@@ -214,3 +236,10 @@ jobs:
         with:
           name: ccm-logs-scylla-${{ matrix.scylla-version }}
           path: /tmp/ccm*/ccm*/node*/logs/*
+
+      - name: Check python versions
+        run: |
+          python --version
+          echo "aaa"
+          python2 --version
+          python3 --version
