@@ -1384,19 +1384,57 @@ public class Cluster implements Closeable {
       return this;
     }
 
+    /**
+     * Configure for Scylla Cloud Serverless cluster using configuration bundle.
+     *
+     * @param configurationFile configuration bundle file.
+     * @return this builder.
+     * @throws IOException
+     * @see Builder#withScyllaCloudConnectionConfig(ScyllaCloudConnectionConfig)
+     */
     public Builder withScyllaCloudConnectionConfig(File configurationFile) throws IOException {
       return withScyllaCloudConnectionConfig(configurationFile.toURI().toURL());
     }
 
+    /**
+     * Configure for Scylla Cloud Serverless cluster using URL to configuration bundle.
+     *
+     * @param configurationUrl URL from which configuration bundle can be read.
+     * @return this builder.
+     * @throws IOException
+     * @see Builder#withScyllaCloudConnectionConfig(ScyllaCloudConnectionConfig)
+     */
     public Builder withScyllaCloudConnectionConfig(URL configurationUrl) throws IOException {
       return withScyllaCloudConnectionConfig(configurationUrl.openStream());
     }
 
+    /**
+     * Configure for Scylla Cloud Serverless cluster using InputStream of configuration bundle.
+     *
+     * @param inputStream input stream containing configuration bundle format data.
+     * @return this builder.
+     * @throws IOException
+     * @see Builder#withScyllaCloudConnectionConfig(ScyllaCloudConnectionConfig)
+     */
     public Builder withScyllaCloudConnectionConfig(InputStream inputStream) throws IOException {
       return withScyllaCloudConnectionConfig(
           ScyllaCloudConnectionConfig.fromInputStream(inputStream));
     }
 
+    /**
+     * Sets a collection of options for connecting to Scylla Cloud Serverless cluster.
+     *
+     * <p>Sets several options according to provided {@link ScyllaCloudConnectionConfig}. This
+     * includes calling {@link Builder#withEndPointFactory(EndPointFactory)}, {@link
+     * Builder#withSSL(SSLOptions)}, {@link Builder#withAuthProvider(AuthProvider)}, {@link
+     * Builder#withoutAdvancedShardAwareness()} with parameters derived from the config.
+     *
+     * <p>Cannot be combined with {@link Builder#addContactPoint}. All contact points should already
+     * be provided in {@link ScyllaCloudConnectionConfig}.
+     *
+     * @param config instantiated ScyllaCloudConnectionConfig.
+     * @return this builder.
+     */
     protected Builder withScyllaCloudConnectionConfig(ScyllaCloudConnectionConfig config) {
       try {
         ScyllaCloudDatacenter currentDatacenter = config.getCurrentDatacenter();
