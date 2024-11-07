@@ -36,13 +36,13 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.NavigableSet;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
@@ -916,8 +916,8 @@ public class Metadata {
     UUID targetHostUuid = host.getHostId();
     long tokenValue = (long) token.getValue();
     TabletMap.KeyspaceTableNamePair key = new TabletMap.KeyspaceTableNamePair(keyspace, table);
-    NavigableSet<TabletMap.Tablet> targetTablets = tabletMap.getMapping().get(key);
-    if (targetTablets == null) {
+    TabletMap.TabletSet targetSet = tabletMap.getMapping().get(key);
+    if (targetSet == null) {
       logger.trace(
           "Could not determine shard for token {} on host {} because table {}.{} is not present in tablets "
               + "metadata. Returning -1.",
@@ -927,13 +927,20 @@ public class Metadata {
           table);
       return -1;
     }
-    TabletMap.Tablet row = targetTablets.ceiling(TabletMap.Tablet.malformedTablet(tokenValue));
-    if (row != null && row.getFirstToken() < tokenValue) {
-      for (TabletMap.HostShardPair hostShardPair : row.getReplicas()) {
-        if (hostShardPair.getHost().equals(targetHostUuid)) {
-          return hostShardPair.getShard();
+    Lock readLock = targetSet.lock.readLock();
+    try {
+      readLock.lock();
+      TabletMap.Tablet row =
+          targetSet.tablets.ceiling(TabletMap.Tablet.malformedTablet(tokenValue));
+      if (row != null && row.getFirstToken() < tokenValue) {
+        for (TabletMap.HostShardPair hostShardPair : row.getReplicas()) {
+          if (hostShardPair.getHost().equals(targetHostUuid)) {
+            return hostShardPair.getShard();
+          }
         }
       }
+    } finally {
+      readLock.unlock();
     }
     logger.trace(
         "Could not find tablet corresponding to token {} on host {} for table {} in keyspace {}. Returning -1.",

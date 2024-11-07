@@ -14,6 +14,8 @@ import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,7 +27,9 @@ import org.slf4j.LoggerFactory;
 public class TabletMap {
   private static final Logger logger = LoggerFactory.getLogger(TabletMap.class);
 
-  private final ConcurrentMap<KeyspaceTableNamePair, NavigableSet<Tablet>> mapping;
+  // There are no additional locking mechanisms for the mapping field itself, however each TabletSet
+  // inside has its own ReadWriteLock that should be used when dealing with its internals.
+  private final ConcurrentMap<KeyspaceTableNamePair, TabletSet> mapping;
 
   private final Cluster.Manager cluster;
 
@@ -34,7 +38,7 @@ public class TabletMap {
   private TypeCodec<TupleValue> tabletPayloadCodec = null;
 
   public TabletMap(
-      Cluster.Manager cluster, ConcurrentMap<KeyspaceTableNamePair, NavigableSet<Tablet>> mapping) {
+      Cluster.Manager cluster, ConcurrentMap<KeyspaceTableNamePair, TabletSet> mapping) {
     this.cluster = cluster;
     this.mapping = mapping;
   }
@@ -46,9 +50,9 @@ public class TabletMap {
   /**
    * Returns the mapping of tables to their tablets.
    *
-   * @return the Map keyed by (keyspace,table) pairs with Set of tablets as value type.
+   * @return the Map keyed by (keyspace,table) pairs with {@link TabletSet} as value type.
    */
-  public Map<KeyspaceTableNamePair, NavigableSet<Tablet>> getMapping() {
+  public Map<KeyspaceTableNamePair, TabletSet> getMapping() {
     return mapping;
   }
 
@@ -68,28 +72,34 @@ public class TabletMap {
       return Collections.emptySet();
     }
 
-    NavigableSet<Tablet> set = mapping.get(key);
-    if (set == null) {
+    TabletSet tabletSet = mapping.get(key);
+    if (tabletSet == null) {
       logger.trace(
           "There is no tablets for {}.{} in this mapping. Returning empty set.", keyspace, table);
       return Collections.emptySet();
     }
-    Tablet row = mapping.get(key).ceiling(Tablet.malformedTablet(token));
-    if (row == null || row.firstToken >= token) {
-      logger.trace(
-          "Could not find tablet for {}.{} that owns token {}. Returning empty set.",
-          keyspace,
-          table,
-          token);
-      return Collections.emptySet();
-    }
+    Lock readLock = tabletSet.lock.readLock();
+    try {
+      readLock.lock();
+      Tablet row = mapping.get(key).tablets.ceiling(Tablet.malformedTablet(token));
+      if (row == null || row.firstToken >= token) {
+        logger.trace(
+            "Could not find tablet for {}.{} that owns token {}. Returning empty set.",
+            keyspace,
+            table,
+            token);
+        return Collections.emptySet();
+      }
 
-    HashSet<UUID> uuidSet = new HashSet<>();
-    for (HostShardPair hostShardPair : row.replicas) {
-      if (cluster.metadata.getHost(hostShardPair.getHost()) != null)
-        uuidSet.add(hostShardPair.getHost());
+      HashSet<UUID> uuidSet = new HashSet<>();
+      for (HostShardPair hostShardPair : row.replicas) {
+        if (cluster.metadata.getHost(hostShardPair.getHost()) != null)
+          uuidSet.add(hostShardPair.getHost());
+      }
+      return uuidSet;
+    } finally {
+      readLock.unlock();
     }
-    return uuidSet;
   }
 
   /**
@@ -121,46 +131,47 @@ public class TabletMap {
       HostShardPair hostShardPair = new HostShardPair(tuple.getUUID(0), tuple.getInt(1));
       replicas.add(hostShardPair);
     }
+    Tablet newTablet = new Tablet(keyspace, null, table, firstToken, lastToken, replicas);
 
-    // Working on a copy to avoid concurrent modification of the same set
-    NavigableSet<Tablet> existingTablets =
-        new TreeSet<>(mapping.computeIfAbsent(ktPair, k -> new TreeSet<>()));
+    TabletSet tabletSet = mapping.computeIfAbsent(ktPair, k -> new TabletSet());
+    Lock writeLock = tabletSet.lock.writeLock();
+    try {
+      writeLock.lock();
+      NavigableSet<Tablet> currentTablets = tabletSet.tablets;
+      // Single tablet token range is represented by (firstToken, lastToken] interval
+      // We need to do two sweeps: remove overlapping tablets by looking at lastToken of existing
+      // tablets
+      // and then by looking at firstToken of existing tablets. Currently, the tablets are sorted
+      // according
+      // to their lastTokens.
 
-    // Single tablet token range is represented by (firstToken, lastToken] interval
-    // We need to do two sweeps: remove overlapping tablets by looking at lastToken of existing
-    // tablets
-    // and then by looking at firstToken of existing tablets. Currently, the tablets are sorted
-    // according
-    // to their lastTokens.
-
-    // First sweep: remove all tablets whose lastToken is inside this interval
-    Iterator<Tablet> it =
-        existingTablets.headSet(Tablet.malformedTablet(lastToken), true).descendingIterator();
-    while (it.hasNext()) {
-      Tablet tablet = it.next();
-      if (tablet.lastToken <= firstToken) {
-        break;
+      // First sweep: remove all tablets whose lastToken is inside this interval
+      Iterator<Tablet> it = currentTablets.headSet(newTablet, true).descendingIterator();
+      while (it.hasNext()) {
+        Tablet tablet = it.next();
+        if (tablet.lastToken <= firstToken) {
+          break;
+        }
+        it.remove();
       }
-      it.remove();
-    }
 
-    // Second sweep: remove all tablets whose firstToken is inside this tuple's (firstToken,
-    // lastToken]
-    // After the first sweep, this theoretically should remove at most 1 tablet
-    it = existingTablets.tailSet(Tablet.malformedTablet(lastToken), true).iterator();
-    while (it.hasNext()) {
-      Tablet tablet = it.next();
-      if (tablet.firstToken >= lastToken) {
-        break;
+      // Second sweep: remove all tablets whose firstToken is inside this tuple's (firstToken,
+      // lastToken]
+      // After the first sweep, this theoretically should remove at most 1 tablet
+      it = currentTablets.tailSet(newTablet, true).iterator();
+      while (it.hasNext()) {
+        Tablet tablet = it.next();
+        if (tablet.firstToken >= lastToken) {
+          break;
+        }
+        it.remove();
       }
-      it.remove();
+
+      // Add new (now) non-overlapping tablet
+      currentTablets.add(newTablet);
+    } finally {
+      writeLock.unlock();
     }
-
-    // Add new (now) non-overlapping tablet
-    existingTablets.add(new Tablet(keyspace, null, table, firstToken, lastToken, replicas));
-
-    // Set the updated result in the main map
-    mapping.put(ktPair, existingTablets);
   }
 
   public TupleType getPayloadOuterTuple() {
@@ -255,6 +266,18 @@ public class TabletMap {
     @Override
     public int hashCode() {
       return Objects.hash(keyspace, tableName);
+    }
+  }
+
+  /**
+   * Set of tablets bundled with ReadWriteLock to allow concurrent modification for different sets.
+   */
+  public static class TabletSet {
+    final NavigableSet<Tablet> tablets;
+    final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+
+    public TabletSet() {
+      this.tablets = new TreeSet<>();
     }
   }
 
