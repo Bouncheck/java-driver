@@ -4,7 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.datastax.driver.core.exceptions.SyntaxError;
 import com.datastax.driver.core.utils.ScyllaOnly;
-import com.datastax.driver.core.utils.ScyllaSkip;
+import com.datastax.driver.core.utils.ScyllaVersion;
 import java.nio.ByteBuffer;
 import java.util.Map;
 import org.testng.Assert;
@@ -17,7 +17,7 @@ import org.testng.annotations.Test;
       "--experimental-features=tablets"
     })
 @ScyllaOnly
-@ScyllaSkip // There is no released version with tablets-routing-v1 currently
+@ScyllaVersion(minOSS = "6.0.0", minEnterprise = "2024.2", description = "Needs to support tablets")
 public class TabletsIT extends CCMTestsSupport {
 
   private static final int INITIAL_TABLETS = 32;
