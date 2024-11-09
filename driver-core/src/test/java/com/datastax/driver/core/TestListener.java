@@ -25,8 +25,10 @@ import com.datastax.driver.core.utils.CassandraVersion;
 import com.datastax.driver.core.utils.DseVersion;
 import com.datastax.driver.core.utils.ScyllaOnly;
 import com.datastax.driver.core.utils.ScyllaSkip;
+import com.datastax.driver.core.utils.ScyllaVersion;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import org.testng.IInvokedMethod;
 import org.testng.IInvokedMethodListener;
@@ -144,6 +146,11 @@ public class TestListener extends TestListenerAdapter implements IInvokedMethodL
       dseVersionCheck(dseVersion);
       foundAnnotation = true;
     }
+    if (element.isAnnotationPresent(ScyllaVersion.class)) {
+      ScyllaVersion scyllaVersion = element.getAnnotation(ScyllaVersion.class);
+      scyllaVersionCheck(scyllaVersion);
+      foundAnnotation = true;
+    }
     return foundAnnotation;
   }
 
@@ -169,6 +176,57 @@ public class TestListener extends TestListenerAdapter implements IInvokedMethodL
     } else {
       throw new SkipException(
           "Skipping test because not configured for DataStax Enterprise cluster.");
+    }
+  }
+
+  private static void scyllaVersionCheck(ScyllaVersion annotation) {
+    VersionNumber configuredVersion = CCMBridge.getGlobalScyllaVersion();
+    if (configuredVersion == null) {
+      throw new SkipException(
+          "Skipping test because provided Scylla version is null and the test requires Scylla.");
+    }
+    boolean isEnterprise = String.valueOf(configuredVersion.getMajor()).matches("\\d{4}");
+
+    if (isEnterprise) {
+      if (!annotation.minEnterprise().isEmpty()) {
+        VersionNumber minVersion =
+            Objects.requireNonNull(VersionNumber.parse(annotation.minEnterprise()));
+        if (minVersion.compareTo(configuredVersion) > 0) {
+          throw new SkipException(
+              String.format(
+                  "Version >= %s required, but found %s. Justification: %s",
+                  minVersion, configuredVersion, annotation.description()));
+        }
+      }
+      if (!annotation.maxEnterprise().isEmpty()) {
+        VersionNumber maxVersion =
+            Objects.requireNonNull(VersionNumber.parse(annotation.maxEnterprise()));
+        if (maxVersion.compareTo(configuredVersion) <= 0) {
+          throw new SkipException(
+              String.format(
+                  "Version < %s required, but found %s. Justification: %s",
+                  maxVersion, configuredVersion, annotation.description()));
+        }
+      }
+    } else {
+      if (!annotation.minOSS().isEmpty()) {
+        VersionNumber minVersion = Objects.requireNonNull(VersionNumber.parse(annotation.minOSS()));
+        if (minVersion.compareTo(configuredVersion) > 0) {
+          throw new SkipException(
+              String.format(
+                  "Version >= %s required, but found %s. Justification: %s",
+                  minVersion, configuredVersion, annotation.description()));
+        }
+      }
+      if (!annotation.maxOSS().isEmpty()) {
+        VersionNumber maxVersion = Objects.requireNonNull(VersionNumber.parse(annotation.maxOSS()));
+        if (maxVersion.compareTo(configuredVersion) <= 0) {
+          throw new SkipException(
+              String.format(
+                  "Version < %s required, but found %s. Justification: %s",
+                  maxVersion, configuredVersion, annotation.description()));
+        }
+      }
     }
   }
 
