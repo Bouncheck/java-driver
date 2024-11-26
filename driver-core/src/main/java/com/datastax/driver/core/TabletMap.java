@@ -57,7 +57,9 @@ public class TabletMap {
   }
 
   /**
-   * Finds hosts that have replicas for a given table and token combination
+   * Finds hosts that have replicas for a given table and token combination. Meant for use in query
+   * planning. Can return empty collection if internal replica list information is determined not up
+   * to date.
    *
    * @param keyspace the keyspace that table is in
    * @param table the table name
@@ -93,8 +95,14 @@ public class TabletMap {
 
       HashSet<UUID> uuidSet = new HashSet<>();
       for (HostShardPair hostShardPair : row.replicas) {
-        if (cluster.metadata.getHost(hostShardPair.getHost()) != null)
+        if (cluster.metadata.getHost(hostShardPair.getHost()) == null) {
+          // We've encountered a stale host. Return an empty set to
+          // misroute the request. If misrouted then response will
+          // contain up to date tablet information that will be processed.
+          return Collections.emptySet();
+        } else {
           uuidSet.add(hostShardPair.getHost());
+        }
       }
       return uuidSet;
     } finally {
