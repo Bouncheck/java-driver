@@ -198,6 +198,24 @@ public class TabletMap {
     return tabletPayloadCodec;
   }
 
+  public void removeTableMappings(KeyspaceTableNamePair key) {
+    this.mapping.remove(key);
+  }
+
+  public void removeTableMappings(String keyspace, String table) {
+    removeTableMappings(new KeyspaceTableNamePair(keyspace, table));
+  }
+
+  public void removeTableMappings(String keyspace) {
+    Iterator<TabletMap.KeyspaceTableNamePair> it = getMapping().keySet().iterator();
+    while (it.hasNext()) {
+      KeyspaceTableNamePair key = it.next();
+      if (key.getKeyspace().equals(keyspace)) {
+        it.remove();
+      }
+    }
+  }
+
   /**
    * Simple class to hold UUID of a host and a shard number. Class itself makes no checks or
    * guarantees about existence of a shard on corresponding host.

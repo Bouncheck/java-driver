@@ -150,6 +150,22 @@ public class Metadata {
   Metadata(Cluster.Manager cluster) {
     this.cluster = cluster;
     this.tabletMap = TabletMap.emptyMap(cluster);
+    if (cluster.configuration.getQueryOptions().isMetadataEnabled()) {
+      cluster
+          .getCluster()
+          .register(
+              new TabletMapListener(tabletMap) {
+                @Override
+                public void onRegister(Cluster cluster) {
+                  logger.info("Registered event listener for tablet map.");
+                }
+
+                @Override
+                public void onUnregister(Cluster cluster) {
+                  logger.info("Unregistered tablet map's event listener.");
+                }
+              });
+    }
   }
 
   // rebuilds the token map with the current hosts, typically when refreshing schema metadata
