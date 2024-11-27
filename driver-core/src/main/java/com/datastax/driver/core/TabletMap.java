@@ -64,9 +64,9 @@ public class TabletMap {
    * @param keyspace the keyspace that table is in
    * @param table the table name
    * @param token the token to look for
-   * @return Set of host UUIDS that do have a tablet for given token for a given table.
+   * @return Set of Host instances that do have a tablet for the given token and table combination.
    */
-  public Set<UUID> getReplicas(String keyspace, String table, long token) {
+  public Set<Host> getReplicas(String keyspace, String table, long token) {
     TabletMap.KeyspaceTableNamePair key = new TabletMap.KeyspaceTableNamePair(keyspace, table);
 
     if (mapping == null) {
@@ -93,18 +93,19 @@ public class TabletMap {
         return Collections.emptySet();
       }
 
-      HashSet<UUID> uuidSet = new HashSet<>();
+      HashSet<Host> replicaSet = new HashSet<>();
       for (HostShardPair hostShardPair : row.replicas) {
-        if (cluster.metadata.getHost(hostShardPair.getHost()) == null) {
+        Host replica = cluster.metadata.getHost(hostShardPair.getHost());
+        if (replica == null) {
           // We've encountered a stale host. Return an empty set to
           // misroute the request. If misrouted then response will
           // contain up to date tablet information that will be processed.
           return Collections.emptySet();
         } else {
-          uuidSet.add(hostShardPair.getHost());
+          replicaSet.add(replica);
         }
       }
-      return uuidSet;
+      return replicaSet;
     } finally {
       readLock.unlock();
     }

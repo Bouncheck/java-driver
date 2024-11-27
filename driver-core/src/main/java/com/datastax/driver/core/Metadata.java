@@ -44,7 +44,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -570,9 +569,9 @@ public class Metadata {
       if (keyspace != null && table != null) {
         Token token = partitioner.hash(partitionKey);
         assert (token instanceof Token.TokenLong64);
-        Set<UUID> hostUuids = tabletMap.getReplicas(keyspace, table, (long) token.getValue());
-        if (!hostUuids.isEmpty()) {
-          return hostUuids.stream().map(this::getHost).collect(Collectors.toSet());
+        Set<Host> replicas = tabletMap.getReplicas(keyspace, table, (long) token.getValue());
+        if (!replicas.isEmpty()) {
+          return replicas;
         }
       }
       // Fall back to tokenMap
