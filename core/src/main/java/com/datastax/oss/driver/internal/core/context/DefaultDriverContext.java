@@ -65,6 +65,7 @@ import com.datastax.oss.driver.internal.core.metadata.NoopNodeStateListener;
 import com.datastax.oss.driver.internal.core.metadata.TopologyMonitor;
 import com.datastax.oss.driver.internal.core.metadata.schema.MultiplexingSchemaChangeListener;
 import com.datastax.oss.driver.internal.core.metadata.schema.NoopSchemaChangeListener;
+import com.datastax.oss.driver.internal.core.metadata.schema.TabletMapSchemaChangeListener;
 import com.datastax.oss.driver.internal.core.metadata.schema.parsing.DefaultSchemaParserFactory;
 import com.datastax.oss.driver.internal.core.metadata.schema.parsing.SchemaParserFactory;
 import com.datastax.oss.driver.internal.core.metadata.schema.queries.DefaultSchemaQueriesFactory;
@@ -658,6 +659,10 @@ public class DefaultDriverContext implements InternalDriverContext {
               SchemaChangeListener.class,
               "com.datastax.oss.driver.internal.core.metadata.schema")
           .ifPresent(listeners::add);
+    }
+    if (getMetadataManager().isSchemaEnabled()) {
+      listeners.add(
+          new TabletMapSchemaChangeListener(getMetadataManager().getMetadata().getTabletMap()));
     }
     if (listeners.isEmpty()) {
       return new NoopSchemaChangeListener(this);

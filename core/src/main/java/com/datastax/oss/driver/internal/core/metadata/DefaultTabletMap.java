@@ -123,6 +123,37 @@ public class DefaultTabletMap implements TabletMap {
   }
 
   /**
+   * Removes tablets that contain given node (by reference equality) as one of the replicas.
+   *
+   * @param node node used as a filter criterion.
+   */
+  @Override
+  public void removeByNode(Node node) {
+    for (ConcurrentSkipListSet<Tablet> tabletSet : mapping.values()) {
+      Iterator<Tablet> it = tabletSet.iterator();
+      while (it.hasNext()) {
+        if (it.next().getReplicaNodes().contains(node)) {
+          it.remove();
+        }
+      }
+    }
+  }
+
+  @Override
+  public void removeByKeyspace(CqlIdentifier keyspace) {
+    mapping
+        .keySet()
+        .removeIf(keyspaceTableNamePair -> keyspaceTableNamePair.getKeyspace().equals(keyspace));
+  }
+
+  @Override
+  public void removeByTable(CqlIdentifier table) {
+    mapping
+        .keySet()
+        .removeIf(keyspaceTableNamePair -> keyspaceTableNamePair.getTableName().equals(table));
+  }
+
+  /**
    * Represents a single tablet created from tablets-routing-v1 custom payload. Its {@code
    * compareTo} implementation intentionally relies solely on {@code lastToken} in order to allow
    * for quick lookup on sorted Collections based just on the token value. Its token range is

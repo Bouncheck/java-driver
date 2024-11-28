@@ -67,10 +67,9 @@ public class RemoveNodeRefresh extends NodesRefresh {
       return new Result(oldMetadata);
     } else {
       LOG.debug("[{}] Removing node {}", logPrefix, removedNode);
-      LOG.debug("[{}] Tablet metadata will be wiped and rebuilt due to node removal.", logPrefix);
-      DefaultMetadata newerMetadata = oldMetadata.withTabletMap(DefaultTabletMap.emptyMap());
+      oldMetadata.tabletMap.removeByNode(removedNode);
       return new Result(
-          newerMetadata.withNodes(newNodesBuilder.build(), tokenMapEnabled, false, null, context),
+          oldMetadata.withNodes(newNodesBuilder.build(), tokenMapEnabled, false, null, context),
           ImmutableList.of(NodeStateEvent.removed((DefaultNode) removedNode)));
     }
   }

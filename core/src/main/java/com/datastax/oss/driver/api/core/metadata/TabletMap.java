@@ -34,4 +34,25 @@ public interface TabletMap {
    *     present.
    */
   public Tablet getTablet(CqlIdentifier keyspace, CqlIdentifier table, long token);
+
+  /**
+   * Removes all tablets that contain given node in its replica list.
+   *
+   * @param node node serving as filter criterion
+   */
+  public void removeByNode(Node node);
+
+  /**
+   * Removes all mappings for a given keyspace.
+   *
+   * @param keyspace keyspace to remove
+   */
+  public void removeByKeyspace(CqlIdentifier keyspace);
+
+  /**
+   * Removes all mappings for a given table.
+   *
+   * @param table table to remove
+   */
+  public void removeByTable(CqlIdentifier table);
 }
