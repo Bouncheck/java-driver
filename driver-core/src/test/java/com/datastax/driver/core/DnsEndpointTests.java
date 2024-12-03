@@ -47,8 +47,7 @@ public class DnsEndpointTests {
       logger.info("Queried node has broadcast_address: {}}", address);
       System.out.flush();
     } finally {
-      assert bridgeA != null;
-      bridgeA.close();
+      if (bridgeA != null) bridgeA.close();
     }
 
     CCMBridge bridgeB = null;
@@ -72,8 +71,7 @@ public class DnsEndpointTests {
     } catch (InterruptedException e) {
       throw new RuntimeException(e);
     } finally {
-      assert bridgeB != null;
-      bridgeB.close();
+      if (bridgeB != null) bridgeB.close();
     }
   }
 

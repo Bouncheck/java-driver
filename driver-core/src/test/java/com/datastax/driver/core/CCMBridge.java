@@ -194,6 +194,7 @@ public class CCMBridge implements CCMAccess {
   static {
     String inputCassandraVersion = System.getProperty("cassandra.version");
     String inputScyllaVersion = System.getProperty("scylla.version");
+    GLOBAL_SCYLLA_VERSION_NUMBER = parseScyllaInputVersion(inputScyllaVersion);
 
     String installDirectory = System.getProperty("cassandra.directory");
     String branch = System.getProperty("cassandra.branch");
@@ -206,8 +207,11 @@ public class CCMBridge implements CCMAccess {
       installArgs.add("-v git:" + branch.trim().replaceAll("\"", ""));
     } else if (inputScyllaVersion != null && !inputScyllaVersion.trim().isEmpty()) {
       installArgs.add(" --scylla ");
-      installArgs.add("-v release:" + inputScyllaVersion);
-
+      if (isVersionNumber(inputScyllaVersion)) {
+        installArgs.add("-v release:" + inputScyllaVersion);
+      } else {
+        installArgs.add("-v " + inputScyllaVersion);
+      }
       // Detect Scylla Enterprise - it should start with
       // a 4-digit year.
       if (inputScyllaVersion.matches("\\d{4}\\..*")) {
@@ -245,8 +249,6 @@ public class CCMBridge implements CCMAccess {
       envMap.put("JAVA_HOME", ccmJavaHome);
     }
     ENVIRONMENT_MAP = ImmutableMap.copyOf(envMap);
-
-    GLOBAL_SCYLLA_VERSION_NUMBER = VersionNumber.parse(inputScyllaVersion);
 
     if (isDse()) {
       GLOBAL_DSE_VERSION_NUMBER = VersionNumber.parse(inputCassandraVersion);
@@ -336,6 +338,28 @@ public class CCMBridge implements CCMAccess {
 
     String osName = System.getProperty("os.name");
     return osName != null && osName.startsWith("Windows");
+  }
+
+  private static boolean isVersionNumber(String versionString) {
+    try {
+      VersionNumber.parse(versionString);
+    } catch (IllegalArgumentException e) {
+      return false;
+    }
+    return true;
+  }
+
+  private static VersionNumber parseScyllaInputVersion(String versionString) {
+    VersionNumber parsedScyllaVersionNumber = null;
+    try {
+      parsedScyllaVersionNumber = VersionNumber.parse(versionString);
+    } catch (IllegalArgumentException e) {
+      logger.warn(
+          "Failed to parse scylla.version: " + versionString + ". Trying to get it through CCM.",
+          e);
+      parsedScyllaVersionNumber = getScyllaVersionThroughCcm(versionString);
+    }
+    return parsedScyllaVersionNumber;
   }
 
   private final String clusterName;
@@ -792,7 +816,25 @@ public class CCMBridge implements CCMAccess {
     execute(CCM_COMMAND + " node%d setworkload %s", node, workloadStr);
   }
 
-  private String execute(String command, Object... args) {
+  private static VersionNumber getScyllaVersionThroughCcm(String versionString) {
+    File configDir = Files.createTempDir();
+    try {
+      execute(configDir, "ccm create get_version -n 1 --scylla --version %s", versionString);
+      String versionOutput = execute(configDir, "ccm node1 versionfrombuild");
+      return VersionNumber.parse(versionOutput.replace("ccmout> ", "").trim());
+    } catch (RuntimeException cause) {
+      throw new RuntimeException(
+          "Error during getting Scylla version through ccm commands.", cause);
+    } finally {
+      try {
+        execute(configDir, "ccm remove get_version");
+      } catch (Exception ignored) {
+      }
+    }
+  }
+
+  private static String execute(File ccmDir, String command, Object... args) {
+    Logger logger = CCMBridge.logger;
     String fullCommand = String.format(command, args) + " --config-dir=" + ccmDir;
     Closer closer = Closer.create();
     // 10 minutes timeout
@@ -854,6 +896,10 @@ public class CCMBridge implements CCMAccess {
       }
     }
     return sw.toString();
+  }
+
+  private String execute(String command, Object... args) {
+    return execute(this.ccmDir, command, args);
   }
 
   /**
