@@ -131,7 +131,12 @@ class ControlConnection implements Connection.Owner {
 
   Host connectedHost() {
     Connection current = connectionRef.get();
-    return (current == null) ? null : cluster.metadata.getHost(current.endPoint);
+    if (current == null) return null;
+    Host host = cluster.metadata.getHost(current.endPoint);
+    // If the host is not in metadata, then it may be zero-token contact point
+    if (host == null && cluster.configuration.getQueryOptions().shouldSkipZeroTokenNodes())
+      host = cluster.metadata.getContactPoint(current.endPoint);
+    return host;
   }
 
   void triggerReconnect() {
@@ -392,6 +397,11 @@ class ControlConnection implements Connection.Owner {
       throws ConnectionException, BusyConnectionException, ExecutionException,
           InterruptedException {
     Host host = cluster.metadata.getHost(connection.endPoint);
+    // Host may have been deliberately not added to metadata, because it's a zero-token node
+    // Try checking contact points if its null:
+    if (host == null && cluster.configuration.getQueryOptions().shouldSkipZeroTokenNodes()) {
+      host = cluster.metadata.getContactPoint(connection.endPoint);
+    }
     // Neither host, nor it's version should be null. But instead of dying if there is a race or
     // something, we can kind of try to infer
     // a Cassandra version from the protocol version (this is not full proof, we can have the
@@ -826,7 +836,14 @@ class ControlConnection implements Connection.Owner {
         }
       }
       if (isInitialConnection) {
-        cluster.metadata.addIfAbsent(controlHost);
+        if (localRow.isNull("tokens")
+            && cluster.configuration.getQueryOptions().shouldSkipZeroTokenNodes()) {
+          logger.warn(
+              "Control host ({}) is a zero-token node. It will not be added to metadata hosts and will be excluded from regular query planning.",
+              connection.endPoint);
+        } else {
+          cluster.metadata.addIfAbsent(controlHost);
+        }
       }
     }
 
@@ -984,7 +1001,10 @@ class ControlConnection implements Connection.Owner {
 
   private boolean isValidPeer(Row peerRow, boolean logIfInvalid) {
     boolean isValid =
-        peerRow.getColumnDefinitions().contains("host_id") && !peerRow.isNull("host_id");
+        peerRow.getColumnDefinitions().contains("host_id")
+            && !peerRow.isNull("host_id")
+            && peerRow.getColumnDefinitions().contains("tokens")
+            && !peerRow.isNull("tokens");
 
     if (isPeersV2) {
       isValid &=
@@ -1006,14 +1026,12 @@ class ControlConnection implements Connection.Owner {
           peerRow.getColumnDefinitions().contains("data_center")
               && !peerRow.isNull("data_center")
               && peerRow.getColumnDefinitions().contains("rack")
-              && !peerRow.isNull("rack")
-              && peerRow.getColumnDefinitions().contains("tokens")
-              && !peerRow.isNull("tokens");
+              && !peerRow.isNull("rack");
     }
     if (!isValid && logIfInvalid)
       logger.warn(
           "Found invalid row in system.peers: {}. "
-              + "This is likely a gossip or snitch issue, this host will be ignored.",
+              + "This is likely a gossip or snitch issue or a zero-token node, this host will be ignored.",
           formatInvalidPeer(peerRow));
     return isValid;
   }

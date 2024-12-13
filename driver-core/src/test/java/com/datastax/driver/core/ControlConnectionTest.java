@@ -343,13 +343,13 @@ public class ControlConnectionTest extends CCMTestsSupport {
         expectedError =
             String.format(
                 "Found invalid row in system.peers: [peer=%s, %s]. "
-                    + "This is likely a gossip or snitch issue, this host will be ignored.",
+                    + "This is likely a gossip or snitch issue or a zero-token node, this host will be ignored.",
                 node2Address, columnData);
       } else {
         expectedError =
             String.format(
                 "Found invalid row in system.peers: [peer=%s, %s%s%s%s]. "
-                    + "This is likely a gossip or snitch issue, this host will be ignored.",
+                    + "This is likely a gossip or snitch issue or a zero-token node, this host will be ignored.",
                 node2Address,
                 !splitColumnsSet.contains("native_transport_address")
                     ? "missing native_transport_address, "

@@ -74,6 +74,8 @@ public class QueryOptions {
 
   private volatile boolean addOriginalContactsToReconnectionPlan = false;
 
+  private volatile boolean skipZeroTokenNodes = false;
+
   /**
    * Creates a new {@link QueryOptions} instance using the {@link #DEFAULT_CONSISTENCY_LEVEL},
    * {@link #DEFAULT_SERIAL_CONSISTENCY_LEVEL} and {@link #DEFAULT_FETCH_SIZE}.
@@ -519,6 +521,20 @@ public class QueryOptions {
 
   public boolean shouldAddOriginalContactsToReconnectionPlan() {
     return this.addOriginalContactsToReconnectionPlan;
+  }
+
+  /**
+   * Whether the driver should skip adding zero-token nodes to the metadata's hosts set. This mostly
+   * makes a difference for zero-token contact points, because driver won't reach other zero-token
+   * nodes since their records in system.peers are incomplete, thus considered invalid and omitted.
+   */
+  public QueryOptions setSkipZeroTokenNodes(boolean enabled) {
+    this.skipZeroTokenNodes = enabled;
+    return this;
+  }
+
+  public boolean shouldSkipZeroTokenNodes() {
+    return this.skipZeroTokenNodes;
   }
 
   @Override
