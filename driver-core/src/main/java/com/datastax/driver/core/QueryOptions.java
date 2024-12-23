@@ -73,6 +73,7 @@ public class QueryOptions {
   private volatile boolean schemaQueriesPaged = true;
 
   private volatile boolean addOriginalContactsToReconnectionPlan = false;
+  private volatile boolean considerZeroTokenNodesValidPeers = false;
 
   /**
    * Creates a new {@link QueryOptions} instance using the {@link #DEFAULT_CONSISTENCY_LEVEL},
@@ -519,6 +520,21 @@ public class QueryOptions {
 
   public boolean shouldAddOriginalContactsToReconnectionPlan() {
     return this.addOriginalContactsToReconnectionPlan;
+  }
+
+  /**
+   * Recently introduced in Scylla zero-token nodes have null value in "tokens" column in their
+   * system.peers rows. By default extended peer check considers such rows as invalid. Enabling this
+   * option will exclude this field from the check, and allow such rows from system.peers queries to
+   * be used when refreshing metadata.
+   */
+  public QueryOptions setConsiderZeroTokenNodesValidPeers(boolean enabled) {
+    this.considerZeroTokenNodesValidPeers = enabled;
+    return this;
+  }
+
+  public boolean shouldConsiderZeroTokenNodesValidPeers() {
+    return this.considerZeroTokenNodesValidPeers;
   }
 
   @Override

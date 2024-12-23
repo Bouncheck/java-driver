@@ -1008,7 +1008,11 @@ class ControlConnection implements Connection.Owner {
               && peerRow.getColumnDefinitions().contains("rack")
               && !peerRow.isNull("rack")
               && peerRow.getColumnDefinitions().contains("tokens")
-              && !peerRow.isNull("tokens");
+              && (!peerRow.isNull("tokens")
+                  || cluster
+                      .configuration
+                      .getQueryOptions()
+                      .shouldConsiderZeroTokenNodesValidPeers());
     }
     if (!isValid && logIfInvalid)
       logger.warn(
