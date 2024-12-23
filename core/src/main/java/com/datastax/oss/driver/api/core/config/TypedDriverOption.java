@@ -519,6 +519,10 @@ public class TypedDriverOption<ValueT> {
   /** How long the driver waits for the response to a heartbeat. */
   public static final TypedDriverOption<Duration> HEARTBEAT_TIMEOUT =
       new TypedDriverOption<>(DefaultDriverOption.HEARTBEAT_TIMEOUT, GenericType.DURATION);
+  /** Whether zero token peers are allowed */
+  public static final TypedDriverOption<Boolean> METADATA_ALLOW_ZERO_TOKEN_PEERS =
+      new TypedDriverOption<>(
+          DefaultDriverOption.METADATA_ALLOW_ZERO_TOKEN_PEERS, GenericType.BOOLEAN);
   /** How long the driver waits to propagate a Topology event. */
   public static final TypedDriverOption<Duration> METADATA_TOPOLOGY_WINDOW =
       new TypedDriverOption<>(DefaultDriverOption.METADATA_TOPOLOGY_WINDOW, GenericType.DURATION);

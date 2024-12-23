@@ -541,7 +541,12 @@ public class DefaultTopologyMonitor implements TopologyMonitor {
    * node's broadcast RPC address and host ID; otherwise the driver may not work properly.
    */
   protected boolean isPeerValid(AdminRow peerRow) {
-    if (PeerRowValidator.isValid(peerRow)) {
+    if (PeerRowValidator.isValid(
+        peerRow,
+        context
+            .getConfig()
+            .getDefaultProfile()
+            .getBoolean(DefaultDriverOption.METADATA_ALLOW_ZERO_TOKEN_PEERS))) {
       return true;
     } else {
       LOG.warn(

@@ -26,7 +26,7 @@ import net.jcip.annotations.ThreadSafe;
 public class PeerRowValidator {
 
   /** Returns {@code true} if the given peer row is valid, and {@code false} otherwise. */
-  public static boolean isValid(@NonNull AdminRow peerRow) {
+  public static boolean isValid(@NonNull AdminRow peerRow, boolean allowZeroTokenPeers) {
 
     boolean hasPeersRpcAddress = !peerRow.isNull("rpc_address");
     boolean hasPeersV2RpcAddress =
@@ -37,7 +37,11 @@ public class PeerRowValidator {
         && !peerRow.isNull("host_id")
         && !peerRow.isNull("data_center")
         && !peerRow.isNull("rack")
-        && !peerRow.isNull("tokens")
+        && (allowZeroTokenPeers || !peerRow.isNull("tokens"))
         && !peerRow.isNull("schema_version");
+  }
+
+  public static boolean isValid(@NonNull AdminRow peerRow) {
+    return isValid(peerRow, false);
   }
 }

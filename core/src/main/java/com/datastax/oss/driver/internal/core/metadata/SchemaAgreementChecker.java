@@ -190,7 +190,12 @@ class SchemaAgreementChecker {
   }
 
   protected boolean isPeerValid(AdminRow peerRow, Map<UUID, Node> nodes) {
-    if (PeerRowValidator.isValid(peerRow)) {
+    if (PeerRowValidator.isValid(
+        peerRow,
+        context
+            .getConfig()
+            .getDefaultProfile()
+            .getBoolean(DefaultDriverOption.METADATA_ALLOW_ZERO_TOKEN_PEERS))) {
       UUID hostId = peerRow.getUuid("host_id");
       Node node = nodes.get(hostId);
       if (node == null) {
