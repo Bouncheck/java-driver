@@ -371,15 +371,35 @@ public class CcmBridge implements AutoCloseable {
   }
 
   public void start() {
+    startWithArgs("--wait-for-binary-proto", "--wait-other-notice");
+  }
+
+  public void startWithArgs(String... args) {
     if (started.compareAndSet(false, true)) {
       try {
-        execute("start", jvmArgs, "--wait-for-binary-proto", "--wait-other-notice");
+        String[] arr = new String[args.length + 2];
+        arr[0] = "start";
+        arr[1] = jvmArgs;
+        for (int i = 0; i < args.length; i++) {
+          arr[i + 2] = args[i];
+        }
+        execute(arr);
       } catch (RuntimeException re) {
         // if something went wrong starting CCM, see if we can also dump the error
         executeCheckLogError();
         throw re;
       }
     }
+  }
+
+  public void startWithArgs(int n, String... args) {
+    String[] arr = new String[args.length + 2];
+    arr[0] = "node" + n;
+    arr[1] = "start";
+    for (int i = 0; i < args.length; i++) {
+      arr[i + 2] = args[i];
+    }
+    execute(arr);
   }
 
   public void stop() {
@@ -403,15 +423,14 @@ public class CcmBridge implements AutoCloseable {
   public void start(int n) {
     // FIXME: This should not be needed as soon as Scylla CCM adjusts to new names
     if (getCassandraVersion().compareTo(Version.V4_1_0) >= 0) {
-      execute(
-          "node" + n,
-          "start",
+      startWithArgs(
+          n,
           "--jvm_arg=-Dcassandra.allow_new_old_config_keys=true",
           "--jvm_arg=-Dcassandra.allow_duplicate_config_keys=false",
-          "--wait-other-notice",
-          "--wait-for-binary-proto");
+          "--wait-for-binary-proto",
+          "--wait-other-notice");
     } else {
-      execute("node" + n, "start", "--wait-other-notice", "--wait-for-binary-proto");
+      startWithArgs(n, "--wait-for-binary-proto", "--wait-other-notice");
     }
   }
 
@@ -419,17 +438,36 @@ public class CcmBridge implements AutoCloseable {
     execute("node" + n, "stop");
   }
 
-  public void add(int n, String dc) {
+  public void addWithoutStart(int n, String dc) {
+    String[] initialArgs = new String[] {"add", "-i", ipPrefix + n, "-d", dc, "node" + n};
+    ArrayList<String> args = new ArrayList<>(Arrays.asList(initialArgs));
     if (getDseVersion().isPresent()) {
-      execute("add", "-i", ipPrefix + n, "-d", dc, "node" + n, "--dse");
-    } else {
-      execute("add", "-i", ipPrefix + n, "-d", dc, "node" + n);
+      args.add("--dse");
+    } else if (getScyllaVersion().isPresent()) {
+      args.add("--scylla");
     }
+    execute(args.toArray(new String[] {}));
+  }
+
+  public void add(int n, String dc) {
+    addWithoutStart(n, dc);
     start(n);
   }
 
   public void decommission(int n) {
     nodetool(n, "decommission");
+  }
+
+  public void updateNodeConfig(int n, String key, Object value) {
+    updateNodeConfig(n, ImmutableMap.<String, Object>builder().put(key, value).build());
+  }
+
+  public void updateNodeConfig(int n, Map<String, Object> configs) {
+    StringBuilder confStr = new StringBuilder();
+    for (Map.Entry<String, Object> entry : configs.entrySet()) {
+      confStr.append(entry.getKey()).append(":").append(entry.getValue()).append(" ");
+    }
+    execute(String.format("node%s updateconf %s", String.valueOf(n), confStr.toString()));
   }
 
   synchronized void execute(String... args) {
