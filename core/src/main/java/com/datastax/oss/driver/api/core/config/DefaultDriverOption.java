@@ -589,6 +589,12 @@ public enum DefaultDriverOption implements DriverOption {
   HEARTBEAT_TIMEOUT("advanced.heartbeat.timeout"),
 
   /**
+   * Whether zero token peers should be considered valid.
+   *
+   * <p>Value-type: boolean
+   */
+  METADATA_ALLOW_ZERO_TOKEN_PEERS("advanced.metadata.allow-zero-token-peers"),
+  /**
    * How long the driver waits to propagate a Topology event.
    *
    * <p>Value-type: {@link java.time.Duration Duration}
