@@ -30,17 +30,20 @@ import static com.datastax.driver.core.SchemaElement.VIEW;
 
 import com.datastax.driver.core.exceptions.BusyConnectionException;
 import com.datastax.driver.core.exceptions.ConnectionException;
+import com.datastax.driver.core.exceptions.InvalidQueryException;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,6 +58,9 @@ abstract class SchemaParser {
   private static final SchemaParser V2_PARSER = new V2SchemaParser();
   private static final SchemaParser V3_PARSER = new V3SchemaParser();
   private static final SchemaParser V4_PARSER = new V4SchemaParser();
+
+  private static final String SELECT_SCYLLA_KEYSPACES =
+      "SELECT * FROM system_schema.scylla_keyspaces";
 
   static SchemaParser forVersion(VersionNumber cassandraVersion) {
     if (cassandraVersion.getMajor() >= 4) return V4_PARSER;
@@ -197,7 +203,6 @@ abstract class SchemaParser {
 
   private Map<String, KeyspaceMetadata> buildKeyspaces(
       SystemRows rows, VersionNumber cassandraVersion, Cluster cluster) {
-
     Map<String, KeyspaceMetadata> keyspaces = new LinkedHashMap<String, KeyspaceMetadata>();
     for (Row keyspaceRow : rows.keyspaces) {
       KeyspaceMetadata keyspace = KeyspaceMetadata.build(keyspaceRow, cassandraVersion);
@@ -238,6 +243,13 @@ abstract class SchemaParser {
               cluster);
       for (MaterializedViewMetadata view : views.values()) {
         keyspace.add(view);
+      }
+      Row scyllaKeyspacesRow = rows.scyllaKeyspaces.getOrDefault(keyspace.getName(), null);
+      if (scyllaKeyspacesRow != null) {
+        if (scyllaKeyspacesRow.getColumnDefinitions().contains("initial_tablets")
+            && !scyllaKeyspacesRow.isNull("initial_tablets")) {
+          keyspace.setUsesTablets(true);
+        }
       }
       keyspaces.put(keyspace.getName(), keyspace);
     }
@@ -619,6 +631,29 @@ abstract class SchemaParser {
     }
   }
 
+  static Set<String> toKeyspaceSet(ResultSet rs) {
+    if (rs == null) return Collections.emptySet();
+
+    Set<String> result = new HashSet<>();
+    for (Row row : rs) {
+      result.add(row.getString(KeyspaceMetadata.KS_NAME));
+    }
+    return result;
+  }
+
+  static Map<String, Row> groupByKeyspacePk(ResultSet rs) {
+    // Assumes keyspace name is full primary key, therefore
+    // each keyspace name identifies at most one row
+    if (rs == null) return Collections.emptyMap();
+
+    Map<String, Row> result = new HashMap<String, Row>();
+    for (Row row : rs) {
+      String ksName = row.getString(KeyspaceMetadata.KS_NAME);
+      result.put(ksName, row);
+    }
+    return result;
+  }
+
   static Map<String, List<Row>> groupByKeyspace(ResultSet rs) {
     if (rs == null) return Collections.emptyMap();
 
@@ -696,6 +731,25 @@ abstract class SchemaParser {
     return (future == null) ? null : future.get();
   }
 
+  private static ResultSet getIfExists(ResultSetFuture future)
+      throws InterruptedException, ExecutionException {
+    // Some of Scylla specific tables/columns may not exist depending on version.
+    // This method is meant to try to get results without failing whole schema parse
+    // if something additional does not exist.
+    if (future == null) return null;
+    try {
+      ResultSet resultSet = future.get();
+      return resultSet;
+    } catch (ExecutionException ex) {
+      if (ex.getCause() instanceof InvalidQueryException) {
+        // meant to handle keyspace/table does not exist exceptions
+        return null;
+      }
+      // rethrow if it's something else
+      throw ex;
+    }
+  }
+
   /**
    * The rows from the system tables that we want to parse to metadata classes. The format of these
    * rows depends on the Cassandra version, but our parsing code knows how to handle the
@@ -713,6 +767,7 @@ abstract class SchemaParser {
     final ResultSet virtualKeyspaces;
     final Map<String, List<Row>> virtualTables;
     final Map<String, Map<String, Map<String, ColumnMetadata.Raw>>> virtualColumns;
+    final Map<String, Row> scyllaKeyspaces;
 
     public SystemRows(
         ResultSet keyspaces,
@@ -725,7 +780,8 @@ abstract class SchemaParser {
         Map<String, Map<String, List<Row>>> indexes,
         ResultSet virtualKeyspaces,
         Map<String, List<Row>> virtualTables,
-        Map<String, Map<String, Map<String, ColumnMetadata.Raw>>> virtualColumns) {
+        Map<String, Map<String, Map<String, ColumnMetadata.Raw>>> virtualColumns,
+        Map<String, Row> scyllaKeyspaces) {
       this.keyspaces = keyspaces;
       this.tables = tables;
       this.columns = columns;
@@ -737,6 +793,7 @@ abstract class SchemaParser {
       this.virtualKeyspaces = virtualKeyspaces;
       this.virtualTables = virtualTables;
       this.virtualColumns = virtualColumns;
+      this.scyllaKeyspaces = scyllaKeyspaces;
     }
   }
 
@@ -790,7 +847,8 @@ abstract class SchemaParser {
           cfFuture = null,
           colsFuture = null,
           functionsFuture = null,
-          aggregatesFuture = null;
+          aggregatesFuture = null,
+          scyllaKsFuture = null;
 
       ProtocolVersion protocolVersion =
           cluster.getConfiguration().getProtocolOptions().getProtocolVersion();
@@ -812,6 +870,21 @@ abstract class SchemaParser {
       if (isSchemaOrKeyspace && supportsUdfs(cassandraVersion) || targetType == AGGREGATE)
         aggregatesFuture = queryAsync(SELECT_AGGREGATES + whereClause, connection, protocolVersion);
 
+      if (isSchemaOrKeyspace) {
+        if (targetType == KEYSPACE) {
+          scyllaKsFuture =
+              queryAsync(
+                  SELECT_SCYLLA_KEYSPACES
+                      + " WHERE keyspace_name = '"
+                      + targetKeyspace
+                      + "' LIMIT 1;",
+                  connection,
+                  protocolVersion);
+        } else {
+          scyllaKsFuture = queryAsync(SELECT_SCYLLA_KEYSPACES, connection, protocolVersion);
+        }
+      }
+
       return new SystemRows(
           get(ksFuture),
           groupByKeyspace(get(cfFuture)),
@@ -824,7 +897,8 @@ abstract class SchemaParser {
           Collections.<String, Map<String, List<Row>>>emptyMap(),
           null,
           Collections.<String, List<Row>>emptyMap(),
-          Collections.<String, Map<String, Map<String, ColumnMetadata.Raw>>>emptyMap());
+          Collections.<String, Map<String, Map<String, ColumnMetadata.Raw>>>emptyMap(),
+          groupByKeyspacePk(getIfExists(scyllaKsFuture)));
     }
 
     @Override
@@ -1197,9 +1271,19 @@ abstract class SchemaParser {
           cluster.getConfiguration().getProtocolOptions().getProtocolVersion();
 
       Map<String, KeyspaceMetadata> keyspaces = new LinkedHashMap<String, KeyspaceMetadata>();
+      ResultSetFuture scyllaKeyspacesFuture =
+          queryAsync(SELECT_SCYLLA_KEYSPACES, connection, protocolVersion);
       ResultSet keyspacesData = queryAsync(SELECT_KEYSPACES, connection, protocolVersion).get();
+      Map<String, Row> scyllaKeyspacesData = groupByKeyspacePk(getIfExists(scyllaKeyspacesFuture));
       for (Row keyspaceRow : keyspacesData) {
         KeyspaceMetadata keyspace = KeyspaceMetadata.build(keyspaceRow, cassandraVersion);
+        Row scyllaKeyspacesRow = scyllaKeyspacesData.getOrDefault(keyspace.getName(), null);
+        if (scyllaKeyspacesRow != null) {
+          if (scyllaKeyspacesRow.getColumnDefinitions().contains("initial_tablets")
+              && !scyllaKeyspacesRow.isNull("initial_tablets")) {
+            keyspace.setUsesTablets(true);
+          }
+        }
         keyspaces.put(keyspace.getName(), keyspace);
       }
 
@@ -1288,7 +1372,8 @@ abstract class SchemaParser {
           functionsFuture = null,
           aggregatesFuture = null,
           indexesFuture = null,
-          viewsFuture = null;
+          viewsFuture = null,
+          scyllaKsFuture = null;
 
       ProtocolVersion protocolVersion =
           cluster.getConfiguration().getProtocolOptions().getProtocolVersion();
@@ -1356,6 +1441,21 @@ abstract class SchemaParser {
                 connection,
                 protocolVersion);
 
+      if (isSchemaOrKeyspace) {
+        if (targetType == KEYSPACE) {
+          scyllaKsFuture =
+              queryAsync(
+                  SELECT_SCYLLA_KEYSPACES
+                      + " WHERE keyspace_name = '"
+                      + targetKeyspace
+                      + "' LIMIT 1;",
+                  connection,
+                  protocolVersion);
+        } else {
+          scyllaKsFuture = queryAsync(SELECT_SCYLLA_KEYSPACES, connection, protocolVersion);
+        }
+      }
+
       return new SystemRows(
           get(ksFuture),
           groupByKeyspace(get(cfFuture)),
@@ -1367,7 +1467,8 @@ abstract class SchemaParser {
           groupByKeyspaceAndCf(get(indexesFuture), TABLE_NAME),
           null,
           Collections.<String, List<Row>>emptyMap(),
-          Collections.<String, Map<String, Map<String, ColumnMetadata.Raw>>>emptyMap());
+          Collections.<String, Map<String, Map<String, ColumnMetadata.Raw>>>emptyMap(),
+          groupByKeyspacePk(getIfExists(scyllaKsFuture)));
     }
 
     @Override
@@ -1499,7 +1600,8 @@ abstract class SchemaParser {
           viewsFuture = null,
           virtualKeyspacesFuture = null,
           virtualTableFuture = null,
-          virtualColumnsFuture = null;
+          virtualColumnsFuture = null,
+          scyllaKsFuture = null;
 
       ProtocolVersion protocolVersion =
           cluster.getConfiguration().getProtocolOptions().getProtocolVersion();
@@ -1589,6 +1691,21 @@ abstract class SchemaParser {
                 protocolVersion);
       }
 
+      if (isSchemaOrKeyspace) {
+        if (targetType == KEYSPACE) {
+          scyllaKsFuture =
+              queryAsync(
+                  SELECT_SCYLLA_KEYSPACES
+                      + " WHERE keyspace_name = '"
+                      + targetKeyspace
+                      + "' LIMIT 1;",
+                  connection,
+                  protocolVersion);
+        } else {
+          scyllaKsFuture = queryAsync(SELECT_SCYLLA_KEYSPACES, connection, protocolVersion);
+        }
+      }
+
       return new SystemRows(
           get(ksFuture),
           groupByKeyspace(get(cfFuture)),
@@ -1600,7 +1717,8 @@ abstract class SchemaParser {
           groupByKeyspaceAndCf(get(indexesFuture), TABLE_NAME),
           get(virtualKeyspacesFuture),
           groupByKeyspace(get(virtualTableFuture)),
-          groupByKeyspaceAndCf(get(virtualColumnsFuture), cassandraVersion, TABLE_NAME));
+          groupByKeyspaceAndCf(get(virtualColumnsFuture), cassandraVersion, TABLE_NAME),
+          groupByKeyspacePk(getIfExists(scyllaKsFuture)));
     }
   }
 }

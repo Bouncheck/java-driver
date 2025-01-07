@@ -53,6 +53,9 @@ public class KeyspaceMetadata {
   final Map<String, AggregateMetadata> aggregates =
       new ConcurrentHashMap<String, AggregateMetadata>();
 
+  // Scylla feature
+  private boolean usesTablets = false;
+
   @VisibleForTesting
   @Deprecated
   KeyspaceMetadata(String name, boolean durableWrites, Map<String, String> replication) {
@@ -457,5 +460,13 @@ public class KeyspaceMetadata {
 
   ReplicationStrategy replicationStrategy() {
     return strategy;
+  }
+
+  void setUsesTablets(boolean predicate) {
+    this.usesTablets = predicate;
+  }
+
+  public boolean usesTablets() {
+    return this.usesTablets;
   }
 }
