@@ -558,26 +558,31 @@ public class Metadata {
   public Set<Host> getReplicas(
       String keyspace, String table, Token.Factory partitioner, ByteBuffer partitionKey) {
     keyspace = handleId(keyspace);
+    table = handleId(table);
     TokenMap current = tokenMap;
-    if (current == null) {
-      return Collections.emptySet();
-    } else {
-      if (partitioner == null) {
-        partitioner = current.factory;
-      }
-      // If possible, try tablet lookup first
-      if (keyspace != null && table != null) {
-        Token token = partitioner.hash(partitionKey);
-        assert (token instanceof Token.TokenLong64);
-        Set<Host> replicas = tabletMap.getReplicas(keyspace, table, (long) token.getValue());
-        if (!replicas.isEmpty()) {
-          return replicas;
-        }
-      }
-      // Fall back to tokenMap
-      Set<Host> hosts = current.getReplicas(keyspace, partitioner.hash(partitionKey));
-      return hosts == null ? Collections.<Host>emptySet() : hosts;
+    if (partitioner == null && current != null) {
+      partitioner = current.factory;
     }
+    if (partitioner == null) {
+      return Collections.emptySet();
+    }
+    Token token = partitioner.hash(partitionKey);
+
+    // Tablets:
+    KeyspaceMetadata ksMetadata = getKeyspace(keyspace);
+    if (ksMetadata != null && ksMetadata.usesTablets()) {
+      if (keyspace != null && table != null) {
+        assert (token instanceof Token.TokenLong64);
+        return tabletMap.getReplicas(keyspace, table, (long) token.getValue());
+      } else {
+        return Collections.emptySet();
+      }
+    }
+
+    // TokenMap:
+    if (current == null) return Collections.<Host>emptySet();
+    Set<Host> hosts = current.getReplicas(keyspace, token);
+    return hosts == null ? Collections.<Host>emptySet() : hosts;
   }
 
   /**
