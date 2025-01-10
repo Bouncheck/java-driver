@@ -115,6 +115,10 @@ public class SessionLeakIT {
     SIMULACRON_RULE
         .cluster()
         .prime(PrimeDsl.when("USE \"non_existent_keyspace\"").then(PrimeDsl.invalid("irrelevant")));
+    SIMULACRON_RULE
+        .cluster()
+        .prime(
+            PrimeDsl.when("SELECT * FROM system_schema.scylla_keyspaces").then(PrimeDsl.noRows()));
     int threshold = 4;
     // Set the config option explicitly, in case it gets overridden in the test application.conf:
     DriverConfigLoader configLoader =

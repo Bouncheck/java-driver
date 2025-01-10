@@ -75,6 +75,12 @@ public class CassandraSchemaParser implements SchemaParser {
     ImmutableMap.Builder<CqlIdentifier, KeyspaceMetadata> keyspacesBuilder = ImmutableMap.builder();
     for (AdminRow row : rows.keyspaces()) {
       KeyspaceMetadata keyspace = parseKeyspace(row);
+      AdminRow scyllaRow = rows.scyllaKeyspaces().getOrDefault(keyspace.getName(), null);
+      if (scyllaRow != null
+          && scyllaRow.contains("initial_tablets")
+          && !scyllaRow.isNull("initial_tablets")) {
+        keyspace.setUsingTablets(true);
+      }
       keyspacesBuilder.put(keyspace.getName(), keyspace);
     }
     for (AdminRow row : rows.virtualKeyspaces()) {

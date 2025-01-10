@@ -56,6 +56,7 @@ public class CassandraSchemaRows implements SchemaRows {
   private final Map<CqlIdentifier, Multimap<CqlIdentifier, AdminRow>> indexes;
   private final Map<CqlIdentifier, Multimap<CqlIdentifier, AdminRow>> vertices;
   private final Map<CqlIdentifier, Multimap<CqlIdentifier, AdminRow>> edges;
+  private final Map<CqlIdentifier, AdminRow> scyllaKeyspaces;
 
   private CassandraSchemaRows(
       Node node,
@@ -72,7 +73,8 @@ public class CassandraSchemaRows implements SchemaRows {
       Multimap<CqlIdentifier, AdminRow> functions,
       Multimap<CqlIdentifier, AdminRow> aggregates,
       Map<CqlIdentifier, Multimap<CqlIdentifier, AdminRow>> vertices,
-      Map<CqlIdentifier, Multimap<CqlIdentifier, AdminRow>> edges) {
+      Map<CqlIdentifier, Multimap<CqlIdentifier, AdminRow>> edges,
+      Map<CqlIdentifier, AdminRow> scyllaKeyspaces) {
     this.node = node;
     this.dataTypeParser = dataTypeParser;
     this.keyspaces = keyspaces;
@@ -88,6 +90,7 @@ public class CassandraSchemaRows implements SchemaRows {
     this.aggregates = aggregates;
     this.vertices = vertices;
     this.edges = edges;
+    this.scyllaKeyspaces = scyllaKeyspaces;
   }
 
   @NonNull
@@ -166,6 +169,11 @@ public class CassandraSchemaRows implements SchemaRows {
     return edges;
   }
 
+  @Override
+  public Map<CqlIdentifier, AdminRow> scyllaKeyspaces() {
+    return scyllaKeyspaces;
+  }
+
   public static class Builder {
     private static final Logger LOG = LoggerFactory.getLogger(Builder.class);
 
@@ -198,6 +206,8 @@ public class CassandraSchemaRows implements SchemaRows {
         verticesBuilders = new LinkedHashMap<>();
     private final Map<CqlIdentifier, ImmutableMultimap.Builder<CqlIdentifier, AdminRow>>
         edgesBuilders = new LinkedHashMap<>();
+    private final ImmutableMap.Builder<CqlIdentifier, AdminRow> scyllaKeyspacesBuilder =
+        ImmutableMap.builder();
 
     public Builder(Node node, KeyspaceFilter keyspaceFilter, String logPrefix) {
       this.node = node;
@@ -323,6 +333,13 @@ public class CassandraSchemaRows implements SchemaRows {
       return this;
     }
 
+    public Builder withScyllaKeyspaces(Iterable<AdminRow> rows) {
+      for (AdminRow row : rows) {
+        putByKeyspacePk(row, scyllaKeyspacesBuilder);
+      }
+      return this;
+    }
+
     private void put(ImmutableList.Builder<AdminRow> builder, AdminRow row) {
       String keyspace = row.getString("keyspace_name");
       if (keyspace == null) {
@@ -334,6 +351,16 @@ public class CassandraSchemaRows implements SchemaRows {
 
     private void putByKeyspace(
         AdminRow row, ImmutableMultimap.Builder<CqlIdentifier, AdminRow> builder) {
+      String keyspace = row.getString("keyspace_name");
+      if (keyspace == null) {
+        LOG.warn("[{}] Skipping system row with missing keyspace name", logPrefix);
+      } else if (keyspaceFilter.includes(keyspace)) {
+        builder.put(CqlIdentifier.fromInternal(keyspace), row);
+      }
+    }
+
+    private void putByKeyspacePk(
+        AdminRow row, ImmutableMap.Builder<CqlIdentifier, AdminRow> builder) {
       String keyspace = row.getString("keyspace_name");
       if (keyspace == null) {
         LOG.warn("[{}] Skipping system row with missing keyspace name", logPrefix);
@@ -375,7 +402,8 @@ public class CassandraSchemaRows implements SchemaRows {
           functionsBuilder.build(),
           aggregatesBuilder.build(),
           build(verticesBuilders),
-          build(edgesBuilders));
+          build(edgesBuilders),
+          scyllaKeyspacesBuilder.build());
     }
 
     private static <K1, K2, V> Map<K1, Multimap<K2, V>> build(

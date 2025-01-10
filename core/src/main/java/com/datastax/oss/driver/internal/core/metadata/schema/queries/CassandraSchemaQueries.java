@@ -28,10 +28,12 @@ import com.datastax.oss.driver.api.core.metadata.Node;
 import com.datastax.oss.driver.internal.core.adminrequest.AdminRequestHandler;
 import com.datastax.oss.driver.internal.core.adminrequest.AdminResult;
 import com.datastax.oss.driver.internal.core.adminrequest.AdminRow;
+import com.datastax.oss.driver.internal.core.adminrequest.UnexpectedResponseException;
 import com.datastax.oss.driver.internal.core.channel.DriverChannel;
 import com.datastax.oss.driver.internal.core.util.NanoTime;
 import com.datastax.oss.driver.internal.core.util.concurrent.RunOrSchedule;
 import com.datastax.oss.driver.shaded.guava.common.annotations.VisibleForTesting;
+import com.datastax.oss.protocol.internal.ProtocolConstants;
 import io.netty.util.concurrent.EventExecutor;
 import java.time.Duration;
 import java.util.Collections;
@@ -111,6 +113,8 @@ public abstract class CassandraSchemaQueries implements SchemaQueries {
 
   protected abstract Optional<String> selectVerticiesQuery();
 
+  protected abstract Optional<String> selectScyllaKeyspacesQuery();
+
   @Override
   public CompletionStage<SchemaRows> execute() {
     RunOrSchedule.on(adminExecutor, this::executeOnAdminExecutor);
@@ -125,6 +129,12 @@ public abstract class CassandraSchemaQueries implements SchemaQueries {
     String usingClause = shouldApplyUsingTimeout() ? usingTimeoutClause : "";
 
     query(selectKeyspacesQuery() + whereClause + usingClause, schemaRowsBuilder::withKeyspaces);
+    selectScyllaKeyspacesQuery()
+        .ifPresent(
+            select ->
+                queryIfAvailable(
+                    select + whereClause + usingClause, schemaRowsBuilder::withScyllaKeyspaces));
+
     query(selectTypesQuery() + whereClause + usingClause, schemaRowsBuilder::withTypes);
     query(selectTablesQuery() + whereClause + usingClause, schemaRowsBuilder::withTables);
     query(selectColumnsQuery() + whereClause + usingClause, schemaRowsBuilder::withColumns);
@@ -176,6 +186,17 @@ public abstract class CassandraSchemaQueries implements SchemaQueries {
             (result, error) -> handleResult(result, error, builderUpdater), adminExecutor);
   }
 
+  private void queryIfAvailable(
+      String queryString,
+      Function<Iterable<AdminRow>, CassandraSchemaRows.Builder> builderUpdater) {
+    assert adminExecutor.inEventLoop();
+
+    pendingQueries += 1;
+    query(queryString)
+        .whenCompleteAsync(
+            (result, error) -> handleResult(result, error, builderUpdater, true), adminExecutor);
+  }
+
   @VisibleForTesting
   protected CompletionStage<AdminResult> query(String query) {
     return AdminRequestHandler.query(channel, query, timeout, pageSize, logPrefix).start();
@@ -185,10 +206,32 @@ public abstract class CassandraSchemaQueries implements SchemaQueries {
       AdminResult result,
       Throwable error,
       Function<Iterable<AdminRow>, CassandraSchemaRows.Builder> builderUpdater) {
+    handleResult(result, error, builderUpdater, false);
+  }
+
+  private void handleResult(
+      AdminResult result,
+      Throwable error,
+      Function<Iterable<AdminRow>, CassandraSchemaRows.Builder> builderUpdater,
+      boolean ignoreTargetDoesNotExistErrors) {
 
     // If another query already failed, we've already propagated the failure so just ignore this one
     if (schemaRowsFuture.isCompletedExceptionally()) {
       return;
+    }
+
+    if (ignoreTargetDoesNotExistErrors && error instanceof UnexpectedResponseException) {
+      UnexpectedResponseException castedError = (UnexpectedResponseException) error;
+      if (castedError.message.opcode == ProtocolConstants.ErrorCode.SERVER_ERROR
+          && castedError.getMessage().contains("does not exist")) {
+        pendingQueries -= 1;
+        if (pendingQueries == 0) {
+          LOG.debug(
+              "[{}] Schema queries took {}", logPrefix, NanoTime.formatTimeSince(startTimeNs));
+          schemaRowsFuture.complete(schemaRowsBuilder.build());
+        }
+        return;
+      }
     }
 
     if (error != null) {
@@ -200,7 +243,9 @@ public abstract class CassandraSchemaQueries implements SchemaQueries {
         result
             .nextPage()
             .whenCompleteAsync(
-                (nextResult, nextError) -> handleResult(nextResult, nextError, builderUpdater),
+                (nextResult, nextError) ->
+                    handleResult(
+                        nextResult, nextError, builderUpdater, ignoreTargetDoesNotExistErrors),
                 adminExecutor);
       } else {
         pendingQueries -= 1;
