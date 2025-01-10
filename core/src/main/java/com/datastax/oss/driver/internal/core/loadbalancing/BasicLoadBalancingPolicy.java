@@ -37,6 +37,7 @@ import com.datastax.oss.driver.api.core.metadata.NodeState;
 import com.datastax.oss.driver.api.core.metadata.Tablet;
 import com.datastax.oss.driver.api.core.metadata.TabletMap;
 import com.datastax.oss.driver.api.core.metadata.TokenMap;
+import com.datastax.oss.driver.api.core.metadata.schema.KeyspaceMetadata;
 import com.datastax.oss.driver.api.core.metadata.token.Partitioner;
 import com.datastax.oss.driver.api.core.metadata.token.Token;
 import com.datastax.oss.driver.api.core.session.Request;
@@ -328,22 +329,24 @@ public class BasicLoadBalancingPolicy implements LoadBalancingPolicy {
       return Collections.emptySet();
     }
 
-    if (table != null) {
-      if (token == null) {
-        if (partitioner != null) {
-          token = partitioner.hash(key);
-        }
+    if (token == null && partitioner != null) {
+      token = partitioner.hash(key);
+    }
+
+    Optional<KeyspaceMetadata> ksMetadata =
+        context.getMetadataManager().getMetadata().getKeyspace(keyspace);
+    if (ksMetadata.isPresent() && ksMetadata.get().isUsingTablets()) {
+      if (table == null) {
+        return Collections.emptySet();
       }
       if (token instanceof TokenLong64) {
         Tablet targetTablet =
             tabletMap.getTablet(keyspace, table, ((TokenLong64) token).getValue());
         if (targetTablet != null) {
-          Set<Node> replicas = targetTablet.getReplicaNodes();
-          if (!replicas.isEmpty()) {
-            return replicas;
-          }
+          return targetTablet.getReplicaNodes();
         }
       }
+      return Collections.emptySet();
     }
 
     if (!maybeTokenMap.isPresent()) {

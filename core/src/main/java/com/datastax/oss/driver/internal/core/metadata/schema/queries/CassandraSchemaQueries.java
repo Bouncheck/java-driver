@@ -213,17 +213,20 @@ public abstract class CassandraSchemaQueries implements SchemaQueries {
       AdminResult result,
       Throwable error,
       Function<Iterable<AdminRow>, CassandraSchemaRows.Builder> builderUpdater,
-      boolean ignoreTargetDoesNotExistErrors) {
+      boolean ignoreServerErrors) {
 
     // If another query already failed, we've already propagated the failure so just ignore this one
     if (schemaRowsFuture.isCompletedExceptionally()) {
       return;
     }
 
-    if (ignoreTargetDoesNotExistErrors && error instanceof UnexpectedResponseException) {
+    // Meant to allow through "(keyspace/table) does not exist" or "unconfigured" errors for
+    // specific, optional queries
+    if (ignoreServerErrors && error instanceof UnexpectedResponseException) {
       UnexpectedResponseException castedError = (UnexpectedResponseException) error;
-      if (castedError.message.opcode == ProtocolConstants.ErrorCode.SERVER_ERROR
-          && castedError.getMessage().contains("does not exist")) {
+      if (castedError.message.opcode == ProtocolConstants.ErrorCode.SERVER_ERROR) {
+        LOG.debug("Silencing error: ", error);
+        // Consider such query 'done', but ignore its result
         pendingQueries -= 1;
         if (pendingQueries == 0) {
           LOG.debug(
@@ -244,8 +247,7 @@ public abstract class CassandraSchemaQueries implements SchemaQueries {
             .nextPage()
             .whenCompleteAsync(
                 (nextResult, nextError) ->
-                    handleResult(
-                        nextResult, nextError, builderUpdater, ignoreTargetDoesNotExistErrors),
+                    handleResult(nextResult, nextError, builderUpdater, ignoreServerErrors),
                 adminExecutor);
       } else {
         pendingQueries -= 1;
