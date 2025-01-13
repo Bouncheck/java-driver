@@ -27,12 +27,12 @@ public class ZeroTokenNodesIT {
   @Before
   public void checkScyllaVersion() {
     // minOSS = "6.2.0",
-    // minEnterprise = "2024.2.2",
+    // minEnterprise = "2024.2.3",
     // Zero-token nodes introduced in scylladb/scylladb#19684
     assumeTrue(CcmBridge.SCYLLA_ENABLEMENT);
     if (CcmBridge.SCYLLA_ENTERPRISE) {
       assumeTrue(
-          CcmBridge.VERSION.compareTo(Objects.requireNonNull(Version.parse("2024.2.2"))) >= 0);
+          CcmBridge.VERSION.compareTo(Objects.requireNonNull(Version.parse("2024.2.3"))) >= 0);
     } else {
       assumeTrue(CcmBridge.VERSION.compareTo(Objects.requireNonNull(Version.parse("6.2.0"))) >= 0);
     }
