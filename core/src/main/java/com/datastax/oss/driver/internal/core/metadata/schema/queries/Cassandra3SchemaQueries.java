@@ -94,4 +94,9 @@ public class Cassandra3SchemaQueries extends CassandraSchemaQueries {
   protected Optional<String> selectVerticiesQuery() {
     return Optional.empty();
   }
+
+  @Override
+  protected Optional<String> selectScyllaKeyspacesQuery() {
+    return Optional.of("SELECT * FROM system_schema.scylla_keyspaces");
+  }
 }

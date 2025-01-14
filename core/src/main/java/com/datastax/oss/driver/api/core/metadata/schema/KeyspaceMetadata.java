@@ -40,6 +40,12 @@ public interface KeyspaceMetadata extends Describable {
   /** Whether this keyspace is virtual */
   boolean isVirtual();
 
+  default boolean isUsingTablets() {
+    return false;
+  }
+
+  default void setUsingTablets(boolean predicate) {}
+
   /** The replication options defined for this keyspace. */
   @NonNull
   Map<String, String> getReplication();

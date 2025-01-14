@@ -45,6 +45,7 @@ public class DefaultKeyspaceMetadata implements KeyspaceMetadata, Serializable {
   @NonNull private final Map<CqlIdentifier, ViewMetadata> views;
   @NonNull private final Map<FunctionSignature, FunctionMetadata> functions;
   @NonNull private final Map<FunctionSignature, AggregateMetadata> aggregates;
+  private boolean usingTablets = false;
 
   public DefaultKeyspaceMetadata(
       @NonNull CqlIdentifier name,
@@ -117,6 +118,16 @@ public class DefaultKeyspaceMetadata implements KeyspaceMetadata, Serializable {
   @Override
   public Map<FunctionSignature, AggregateMetadata> getAggregates() {
     return aggregates;
+  }
+
+  @Override
+  public boolean isUsingTablets() {
+    return this.usingTablets;
+  }
+
+  @Override
+  public void setUsingTablets(boolean predicate) {
+    this.usingTablets = predicate;
   }
 
   @Override

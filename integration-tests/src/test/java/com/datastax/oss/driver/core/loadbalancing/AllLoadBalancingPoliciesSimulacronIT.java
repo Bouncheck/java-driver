@@ -78,6 +78,10 @@ public class AllLoadBalancingPoliciesSimulacronIT {
         .prime(
             PrimeDsl.when("SELECT * FROM system_schema.keyspaces")
                 .then(new RowBuilder().columnTypes(KEYSPACE_COLUMNS).row(KEYSPACE_ROW).build()));
+    SIMULACRON_RULE
+        .cluster()
+        .prime(
+            PrimeDsl.when("SELECT * FROM system_schema.scylla_keyspaces").then(PrimeDsl.noRows()));
   }
 
   @Test

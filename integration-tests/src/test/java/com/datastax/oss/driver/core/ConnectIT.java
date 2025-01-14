@@ -39,6 +39,7 @@ import com.datastax.oss.driver.api.testinfra.simulacron.SimulacronRule;
 import com.datastax.oss.driver.categories.ParallelizableTests;
 import com.datastax.oss.driver.internal.core.connection.ConstantReconnectionPolicy;
 import com.datastax.oss.simulacron.common.cluster.ClusterSpec;
+import com.datastax.oss.simulacron.common.stubbing.PrimeDsl;
 import com.datastax.oss.simulacron.server.BoundCluster;
 import com.datastax.oss.simulacron.server.RejectScope;
 import edu.umd.cs.findbugs.annotations.NonNull;
@@ -70,6 +71,10 @@ public class ConnectIT {
             // loaded at startup).
             when("SELECT * FROM system_schema.keyspaces")
                 .then(rows().row("keyspace_name", "system").row("keyspace_name", "test")));
+    SIMULACRON_RULE
+        .cluster()
+        .prime(
+            PrimeDsl.when("SELECT * FROM system_schema.scylla_keyspaces").then(PrimeDsl.noRows()));
   }
 
   @Test

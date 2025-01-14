@@ -94,4 +94,9 @@ public class Cassandra21SchemaQueries extends CassandraSchemaQueries {
   protected Optional<String> selectVerticiesQuery() {
     return Optional.empty();
   }
+
+  @Override
+  protected Optional<String> selectScyllaKeyspacesQuery() {
+    return Optional.empty();
+  }
 }

@@ -93,6 +93,12 @@ public class Cassandra3SchemaQueriesTest extends SchemaQueriesTest {
     call.result.complete(
         mockResult(mockRow("keyspace_name", "ks1"), mockRow("keyspace_name", "ks2")));
 
+    // Scylla keyspaces
+    call = queries.calls.poll();
+    assertThat(call.query)
+        .isEqualTo("SELECT * FROM system_schema.scylla_keyspaces" + whereClause + usingClause);
+    call.result.complete(mockResult());
+
     // Types
     call = queries.calls.poll();
     assertThat(call.query)
@@ -217,6 +223,11 @@ public class Cassandra3SchemaQueriesTest extends SchemaQueriesTest {
     assertThat(call.query).isEqualTo("SELECT * FROM system_schema.keyspaces");
     call.result.complete(mockResult(mockRow("keyspace_name", "ks1")));
 
+    // Scylla keyspaces
+    call = queries.calls.poll();
+    assertThat(call.query).isEqualTo("SELECT * FROM system_schema.scylla_keyspaces");
+    call.result.complete(mockResult());
+
     // No types
     call = queries.calls.poll();
     assertThat(call.query).isEqualTo("SELECT * FROM system_schema.types");
@@ -280,6 +291,11 @@ public class Cassandra3SchemaQueriesTest extends SchemaQueriesTest {
     Call call = queries.calls.poll();
     assertThat(call.query).isEqualTo("SELECT * FROM system_schema.keyspaces");
     call.result.complete(mockResult(mockRow("keyspace_name", "ks1")));
+
+    // Scylla keyspaces
+    call = queries.calls.poll();
+    assertThat(call.query).isEqualTo("SELECT * FROM system_schema.scylla_keyspaces");
+    call.result.complete(mockResult());
 
     // No types
     call = queries.calls.poll();
