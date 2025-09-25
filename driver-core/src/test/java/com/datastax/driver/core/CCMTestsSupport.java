@@ -763,30 +763,6 @@ public class CCMTestsSupport {
   }
 
   /**
-   * Returns the cluster builder to test against Scylla Cloud (sniProxy enabled).
-   *
-   * <p>This implementation returns a vanilla builder with contact points and port that match
-   * datacenter description in CCM generated yaml configuration file. This configuration may contain
-   * domain names that cannot be resolved on local machine, therefore we overwrite EndPointFactory
-   * afterwards and add sniProxy contact point using raw ip addresses (with ports from configuration
-   * file). It's not required to call {@link Cluster.Builder#addContactPointsWithPorts}, it will be
-   * done automatically.
-   *
-   * @return The cluster builder to use for the tests.
-   */
-  public Cluster.Builder createClusterBuilderScyllaCloud() throws IOException {
-    assert ccmTestConfig.startSniProxy();
-    Cluster.Builder builder = Cluster.builder();
-
-    File ccmdir = ccm.getCcmDir();
-    File clusterFile = new File(ccmdir, ccm.getClusterName());
-    File yamlFile = new File(clusterFile, "config_data.yaml");
-
-    builder.withScyllaCloudConnectionConfig(yamlFile);
-    return builder;
-  }
-
-  /**
    * Configures the builder with contact points and port that match the running CCM cluster.
    * Therefore it's not required to call {@link Cluster.Builder#addContactPointsWithPorts}, it will
    * be done automatically.
